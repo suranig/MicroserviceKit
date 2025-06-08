@@ -2,4 +2,12 @@ using AggregateKit;
 
 namespace Microservice.Domain.Events;
 
-public record TodoItemCompletedEvent(Guid TodoItemId) : DomainEventBase; 
+public class TodoItemCompletedEvent : DomainEventBase
+{
+    public Guid TodoItemId { get; }
+
+    public TodoItemCompletedEvent(Guid todoItemId)
+    {
+        TodoItemId = todoItemId;
+    }
+} 

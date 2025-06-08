@@ -94,9 +94,9 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
     
     // DDD Configuration
     Console.WriteLine("\n📦 Domain-Driven Design Configuration:");
-    config.DDD.Enabled = PromptYesNo("Enable DDD patterns?", true);
+    var enableDDD = PromptYesNo("Enable DDD patterns?", true);
     
-    if (config.DDD.Enabled)
+    if (enableDDD)
     {
         Console.WriteLine("\nDefine your aggregates (press Enter with empty name to finish):");
         while (true)
@@ -123,18 +123,23 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
                 }
             }
             
-            config.DDD.Aggregates.Add(aggregate);
+            config.Domain ??= new DomainConfiguration();
+            config.Domain.Aggregates ??= new List<AggregateConfiguration>();
+            config.Domain.Aggregates.Add(aggregate);
         }
     }
     
     // API Configuration
     Console.WriteLine("\n🌐 API Configuration:");
-    var apiType = PromptChoice("API type", new[] { "rest", "grpc", "both" }, "rest");
-    config.API.Types = apiType == "both" ? new List<string> { "rest", "grpc" } : new List<string> { apiType };
+    var apiStyle = PromptChoice("API style", new[] { "minimal", "controllers", "both" }, "minimal");
+    config.Features ??= new FeaturesConfiguration();
+    config.Features.Api ??= new ApiConfiguration();
+    config.Features.Api.Style = apiStyle;
     
     // Persistence
     Console.WriteLine("\n💾 Persistence Configuration:");
-    config.Persistence.WriteModel = PromptChoice("Write model", new[] { "inmemory", "postgresql", "sqlserver" }, "inmemory");
+    config.Features.Persistence ??= new PersistenceConfiguration();
+    config.Features.Persistence.Provider = PromptChoice("Persistence provider", new[] { "inmemory", "sqlite", "postgresql", "sqlserver" }, "inmemory");
     
     return config;
 }
@@ -145,9 +150,12 @@ static TemplateConfiguration CreateDefaultConfig(string name)
     {
         MicroserviceName = name,
         Namespace = $"Company.{name}",
-        DDD = new DDDConfiguration
+        Architecture = new ArchitectureConfiguration
         {
-            Enabled = true,
+            Level = "minimal"
+        },
+        Domain = new DomainConfiguration
+        {
             Aggregates = new List<AggregateConfiguration>
             {
                 new AggregateConfiguration
@@ -158,7 +166,7 @@ static TemplateConfiguration CreateDefaultConfig(string name)
                         new PropertyConfiguration { Name = "Title", Type = "string" },
                         new PropertyConfiguration { Name = "IsCompleted", Type = "bool" }
                     },
-                    Methods = new List<string> { "MarkComplete" }
+                    Operations = new List<string> { "Create", "MarkComplete" }
                 }
             }
         }
@@ -242,7 +250,7 @@ The API will be available at: http://localhost:5000/swagger
 
 ## Generated Aggregates
 
-{string.Join("\n", config.DDD.Aggregates.Select(a => $"- **{a.Name}**: {string.Join(", ", a.Properties.Select(p => $"{p.Name} ({p.Type})"))}")))}
+{string.Join("\n", config.Domain?.Aggregates?.Select(a => $"- **{a.Name}**: {string.Join(", ", a.Properties.Select(p => $"{p.Name} ({p.Type})"))}")  ?? new[] { "No aggregates defined" })}
 ";
     
     await context.WriteFileAsync("README.md", readmeContent);

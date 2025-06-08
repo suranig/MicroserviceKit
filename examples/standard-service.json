@@ -1,0 +1,46 @@
+{
+  "microserviceName": "OrderService", 
+  "namespace": "ECommerce.OrderService",
+  "architecture": {
+    "level": "standard"
+  },
+  "features": {
+    "persistence": {
+      "provider": "sqlite"
+    },
+    "api": {
+      "authentication": "jwt"
+    }
+  },
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Order",
+        "properties": [
+          { "name": "CustomerId", "type": "Guid" },
+          { "name": "TotalAmount", "type": "decimal" },
+          { "name": "Status", "type": "OrderStatus" }
+        ],
+        "operations": ["Create", "AddItem", "RemoveItem", "Confirm", "Cancel"]
+      }
+    ],
+    "valueObjects": [
+      {
+        "name": "Money",
+        "properties": [
+          { "name": "Amount", "type": "decimal" },
+          { "name": "Currency", "type": "string" }
+        ]
+      }
+    ]
+  }
+}
+
+// Wygeneruje:
+// OrderService/
+// ├── OrderService.sln
+// ├── src/
+// │   ├── OrderService.Api/         # Controllers + Auth
+// │   ├── OrderService.Application/ # CQRS Handlers  
+// │   └── OrderService.Domain/      # Aggregates + VOs
+// └── tests/OrderService.Tests/ 

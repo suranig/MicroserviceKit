@@ -7,19 +7,29 @@ public class DDDModule : ITemplateModule
 {
     public string Name => "DDD";
 
-    public bool IsEnabled(TemplateConfiguration config) => config.DDD.Enabled;
+    public bool IsEnabled(TemplateConfiguration config)
+    {
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        return decisions.EnableDDD;
+    }
 
     public async Task GenerateAsync(GenerationContext context)
     {
-        foreach (var aggregate in context.Configuration.DDD.Aggregates)
+        if (context.Configuration.Domain?.Aggregates != null)
         {
-            await GenerateAggregateAsync(context, aggregate);
-            await GenerateAggregateEventsAsync(context, aggregate);
+            foreach (var aggregate in context.Configuration.Domain.Aggregates)
+            {
+                await GenerateAggregateAsync(context, aggregate);
+                await GenerateAggregateEventsAsync(context, aggregate);
+            }
         }
 
-        foreach (var valueObject in context.Configuration.DDD.ValueObjects)
+        if (context.Configuration.Domain?.ValueObjects != null)
         {
-            await GenerateValueObjectAsync(context, valueObject);
+            foreach (var valueObject in context.Configuration.Domain.ValueObjects)
+            {
+                await GenerateValueObjectAsync(context, valueObject);
+            }
         }
     }
 
@@ -83,8 +93,8 @@ public class DDDModule : ITemplateModule
     private string GenerateMethods(AggregateConfiguration aggregate)
     {
         // Generate basic methods based on configuration
-        return string.Join("\n\n    ", aggregate.Methods.Select(method => 
-            $"public void {method}()\n    {{\n        // TODO: Implement {method}\n    }}"));
+        return string.Join("\n\n    ", (aggregate.Operations ?? new List<string>()).Select(operation => 
+            $"public void {operation}()\n    {{\n        // TODO: Implement {operation}\n    }}"));
     }
 
     private string GenerateValueObjectConstructor(ValueObjectConfiguration valueObject)

@@ -4,28 +4,46 @@ public class TemplateConfiguration
 {
     public string MicroserviceName { get; set; } = string.Empty;
     public string Namespace { get; set; } = string.Empty;
-    public string OutputPath { get; set; } = "./";
+    public string OutputPath { get; set; } = "./generated";
     
-    public DDDConfiguration DDD { get; set; } = new();
-    public CQRSConfiguration CQRS { get; set; } = new();
-    public APIConfiguration API { get; set; } = new();
-    public PersistenceConfiguration Persistence { get; set; } = new();
-    public MessagingConfiguration Messaging { get; set; } = new();
-    public ContainerizationConfiguration Containerization { get; set; } = new();
+    public ArchitectureConfiguration? Architecture { get; set; }
+    public FeaturesConfiguration? Features { get; set; }
+    public DomainConfiguration? Domain { get; set; }
 }
 
-public class DDDConfiguration
+public class ArchitectureConfiguration
 {
-    public bool Enabled { get; set; } = true;
-    public List<AggregateConfiguration> Aggregates { get; set; } = new();
-    public List<ValueObjectConfiguration> ValueObjects { get; set; } = new();
+    public string? Level { get; set; } // minimal | standard | enterprise | auto
+    public PatternsConfiguration? Patterns { get; set; }
+}
+
+public class PatternsConfiguration
+{
+    public string? DDD { get; set; } = "auto"; // auto | enabled | disabled
+    public string? CQRS { get; set; } = "auto"; // auto | enabled | disabled
+    public string? EventSourcing { get; set; } = "disabled";
+}
+
+public class FeaturesConfiguration
+{
+    public ApiConfiguration? Api { get; set; }
+    public PersistenceConfiguration? Persistence { get; set; }
+    public MessagingConfiguration? Messaging { get; set; }
+    public ObservabilityConfiguration? Observability { get; set; }
+    public DeploymentConfiguration? Deployment { get; set; }
+}
+
+public class DomainConfiguration
+{
+    public List<AggregateConfiguration>? Aggregates { get; set; }
+    public List<ValueObjectConfiguration>? ValueObjects { get; set; }
 }
 
 public class AggregateConfiguration
 {
     public string Name { get; set; } = string.Empty;
     public List<PropertyConfiguration> Properties { get; set; } = new();
-    public List<string> Methods { get; set; } = new();
+    public List<string>? Operations { get; set; } // Zmienione z Methods na Operations
 }
 
 public class PropertyConfiguration
@@ -41,32 +59,37 @@ public class ValueObjectConfiguration
     public List<PropertyConfiguration> Properties { get; set; } = new();
 }
 
-public class CQRSConfiguration
+public class ApiConfiguration
 {
-    public bool Enabled { get; set; } = true;
-    public string Mediator { get; set; } = "wolverine";
-}
-
-public class APIConfiguration
-{
-    public List<string> Types { get; set; } = new() { "rest" };
-    public string Authentication { get; set; } = "none";
+    public string? Style { get; set; } = "auto"; // minimal | controllers | both | auto
+    public string? Authentication { get; set; } = "none"; // none | jwt | oauth
+    public string? Documentation { get; set; } = "auto"; // auto | swagger | none
 }
 
 public class PersistenceConfiguration
 {
-    public string WriteModel { get; set; } = "inmemory";
-    public string ReadModel { get; set; } = "inmemory";
+    public string? Provider { get; set; } = "inmemory"; // inmemory | sqlite | postgresql | sqlserver
+    public string? Migrations { get; set; } = "auto"; // auto | enabled | disabled
+    public string? ReadModel { get; set; } = "same"; // same | separate | redis
 }
 
 public class MessagingConfiguration
 {
     public bool Enabled { get; set; } = false;
-    public string Provider { get; set; } = "inmemory";
+    public string? Provider { get; set; } = "inmemory"; // inmemory | rabbitmq | servicebus
+    public List<string>? Patterns { get; set; } = new(); // outbox, saga, events
 }
 
-public class ContainerizationConfiguration
+public class ObservabilityConfiguration
 {
-    public bool Docker { get; set; } = false;
-    public bool Kubernetes { get; set; } = false;
+    public string? Logging { get; set; } = "auto"; // auto | serilog | none
+    public string? Metrics { get; set; } = "auto"; // auto | prometheus | none
+    public string? Tracing { get; set; } = "disabled"; // disabled | opentelemetry
+}
+
+public class DeploymentConfiguration
+{
+    public string? Docker { get; set; } = "auto"; // auto | enabled | disabled
+    public string? Kubernetes { get; set; } = "disabled";
+    public string? HealthChecks { get; set; } = "auto";
 } 

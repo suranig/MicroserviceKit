@@ -20,9 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\TemplateEngine\Configuration\TemplateConfiguration.csproj" />
-    <ProjectReference Include="..\..\Core\TemplateEngine\Abstractions\ITemplateModule.csproj" />
-    <ProjectReference Include="..\..\Modules\DDD\DDDModule.csproj" />
+    <ProjectReference Include="..\..\Core\TemplateEngine\TemplateEngine.csproj" />
+    <ProjectReference Include="..\..\Modules\DDD\DDD.csproj" />
   </ItemGroup>
 
 </Project> 
