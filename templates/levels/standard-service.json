@@ -34,13 +34,4 @@
       }
     ]
   }
-}
-
-// Wygeneruje:
-// OrderService/
-// ├── OrderService.sln
-// ├── src/
-// │   ├── OrderService.Api/         # Controllers + Auth
-// │   ├── OrderService.Application/ # CQRS Handlers  
-// │   └── OrderService.Domain/      # Aggregates + VOs
-// └── tests/OrderService.Tests/ 
+} 

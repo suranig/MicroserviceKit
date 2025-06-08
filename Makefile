@@ -88,26 +88,26 @@ publish:
 test-basic:
 	@echo "🧪 Testing basic microservice generation..."
 	cd test_cli/basic && rm -rf * && \
-	dotnet run --project ../../src/CLI/CLI.csproj -- generate --name TestBasic --output . --level minimal && \
-	cd TestBasic && dotnet build
+	dotnet run --project ../../src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new TestBasic --output . && \
+	dotnet build
 
 test-standard:
 	@echo "🧪 Testing standard microservice generation..."
 	cd test_cli/standard && rm -rf * && \
-	dotnet run --project ../../src/CLI/CLI.csproj -- generate --name TestStandard --output . --level standard && \
-	cd TestStandard && dotnet build
+	dotnet run --project ../../src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new TestStandard --output . && \
+	dotnet build
 
 test-enterprise:
 	@echo "🧪 Testing enterprise microservice generation..."
 	cd test_cli/enterprise && rm -rf * && \
-	dotnet run --project ../../src/CLI/CLI.csproj -- generate --name TestEnterprise --output . --level enterprise && \
-	cd TestEnterprise && dotnet build
+	dotnet run --project ../../src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new TestEnterprise --output . && \
+	dotnet build
 
 # Interactive CLI testing
 cli-interactive:
 	@echo "🎮 Running CLI in interactive mode..."
 	cd test_cli/basic && \
-	dotnet run --project ../../src/CLI/CLI.csproj -- generate --interactive
+	dotnet run --project ../../src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new TestInteractive --interactive --output .
 
 # Development workflow
 dev: clean restore build test

@@ -26,21 +26,25 @@ mkdir -p "$SCRIPT_DIR/basic"
 cd "$SCRIPT_DIR/basic"
 
 echo "🏗️  Generating microservice..."
-echo "Command: dotnet run --project $PROJECT_ROOT/src/CLI/CLI.csproj -- generate --name QuickTest --output . --level standard"
+echo "Command: dotnet run --project $PROJECT_ROOT/src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new QuickTest --output ."
 
 # Generate microservice
-dotnet run --project "$PROJECT_ROOT/src/CLI/CLI.csproj" -- generate --name QuickTest --output . --level standard
+dotnet run --project "$PROJECT_ROOT/src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj" -- new QuickTest --output .
 
 # Check if generation was successful
-if [ ! -d "QuickTest" ]; then
-    echo "❌ Generation failed - QuickTest directory not created"
+if [ ! -f "QuickTest.sln" ]; then
+    echo "❌ Generation failed - QuickTest.sln not created"
+    exit 1
+fi
+
+if [ ! -d "src" ]; then
+    echo "❌ Generation failed - src directory not created"
     exit 1
 fi
 
 echo "✅ Generation completed successfully"
 
-# Navigate to generated project
-cd QuickTest
+# We're already in the generated project directory
 
 echo "🔨 Building generated microservice..."
 
@@ -64,8 +68,8 @@ fi
 
 echo ""
 echo "🎉 Quick test completed successfully!"
-echo "📁 Generated project location: $SCRIPT_DIR/basic/QuickTest"
+echo "📁 Generated project location: $SCRIPT_DIR/basic"
 echo ""
 echo "To explore the generated project:"
-echo "  cd test_cli/basic/QuickTest"
+echo "  cd test_cli/basic"
 echo "  code ." 

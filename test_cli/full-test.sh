@@ -40,7 +40,7 @@ run_test() {
     echo "🏗️  Generating $level microservice..."
     
     # Generate microservice
-    if dotnet run --project "$PROJECT_ROOT/src/CLI/CLI.csproj" -- generate --name "$test_name" --output . --level "$level"; then
+    if dotnet run --project "$PROJECT_ROOT/src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj" -- new "$test_name" --output .; then
         echo "✅ Generation completed for $level"
     else
         echo "❌ Generation failed for $level"
@@ -50,15 +50,14 @@ run_test() {
     fi
     
     # Check if project was created
-    if [ ! -d "$test_name" ]; then
-        echo "❌ Project directory not created for $level"
+    if [ ! -f "$test_name.sln" ]; then
+        echo "❌ Solution file not created for $level"
         FAILED_TESTS=$((FAILED_TESTS + 1))
-        TEST_RESULTS+=("❌ $level: Project directory missing")
+        TEST_RESULTS+=("❌ $level: Solution file missing")
         return 1
     fi
     
-    # Navigate to generated project
-    cd "$test_name"
+    # We're already in the generated project directory
     
     echo "🔨 Building $level microservice..."
     
@@ -129,11 +128,11 @@ if [ $FAILED_TESTS -eq 0 ]; then
     echo "🎉 All tests passed successfully!"
     echo ""
     echo "Generated projects:"
-    for level in "${LEVELS[@]}"; do
-        if [ -d "$SCRIPT_DIR/$level/Test${level^}" ]; then
-            echo "  📁 $SCRIPT_DIR/$level/Test${level^}"
-        fi
-    done
+for level in "${LEVELS[@]}"; do
+    if [ -f "$SCRIPT_DIR/$level/Test${level^}.sln" ]; then
+        echo "  📁 $SCRIPT_DIR/$level"
+    fi
+done
     exit 0
 else
     echo "❌ Some tests failed. Please check the output above."
