@@ -5,7 +5,7 @@ using Microservice.Core.TemplateEngine.Abstractions;
 using Microservice.Modules.DDD;
 using MicroserviceGenerator.CLI.Commands;
 
-var rootCommand = new RootCommand("Microservice Generator - Create and manage .NET 8 microservices with DDD patterns");
+var rootCommand = new RootCommand("MicroserviceKit - Complete toolkit for generating .NET 8 microservices with DDD patterns");
 
 // Command: new
 var newCommand = new Command("new", "Generate a new microservice from template");
