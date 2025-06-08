@@ -14,10 +14,11 @@ help:
 	@echo "  restore        - Restore NuGet packages"
 	@echo ""
 	@echo "🧪 Testing Commands:"
-	@echo "  test           - Run unit tests"
-	@echo "  cli-test       - Run CLI quick test"
-	@echo "  cli-test-full  - Run full CLI test suite"
-	@echo "  cli-clean      - Clean CLI test directories"
+	@echo "  test              - Run unit tests"
+	@echo "  cli-test          - Run CLI quick test"
+	@echo "  cli-test-full     - Run full CLI test suite"
+	@echo "  cli-test-templates - Test all templates"
+	@echo "  cli-clean         - Clean CLI test directories"
 	@echo ""
 	@echo "🚀 Development Commands:"
 	@echo "  dev-setup      - Setup development environment"
@@ -55,6 +56,10 @@ cli-test:
 cli-test-full:
 	@echo "🧪 Running full CLI test suite..."
 	./test_cli/full-test.sh
+
+cli-test-templates:
+	@echo "🧪 Testing all templates..."
+	./test_cli/test-templates.sh
 
 cli-clean:
 	@echo "🧹 Cleaning CLI test directories..."
