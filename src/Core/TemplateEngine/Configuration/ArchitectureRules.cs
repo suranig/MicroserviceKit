@@ -144,11 +144,12 @@ public static class ArchitectureRules
         var hasCaching = config.Features?.Database?.Cache?.Enabled == true;
         var hasSeparateReadModel = config.Features?.Database?.ReadModel?.Provider != "same";
         var hasComplexPersistence = config.Features?.Database?.EventStore?.Enabled == true;
+        var hasDatabase = config.Features?.Persistence?.Provider != "inmemory";
         
         return level switch
         {
             ArchitectureLevel.Minimal => false, // Nigdy dla minimal
-            ArchitectureLevel.Standard => hasExternalServices || hasMessaging || hasCaching,
+            ArchitectureLevel.Standard => true, // Zawsze dla standard (potrzebne dla repositories)
             ArchitectureLevel.Enterprise => true, // Zawsze dla enterprise
             _ => false
         };

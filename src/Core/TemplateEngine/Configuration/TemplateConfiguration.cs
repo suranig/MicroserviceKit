@@ -31,6 +31,7 @@ public class FeaturesConfiguration
     public MessagingConfiguration? Messaging { get; set; }
     public ObservabilityConfiguration? Observability { get; set; }
     public DeploymentConfiguration? Deployment { get; set; }
+    public TestingConfiguration? Testing { get; set; }
     
     // Enterprise features
     public DatabaseConfiguration? Database { get; set; }
@@ -98,4 +99,12 @@ public class DeploymentConfiguration
     public string? Docker { get; set; } = "auto"; // auto | enabled | disabled
     public string? Kubernetes { get; set; } = "disabled";
     public string? HealthChecks { get; set; } = "auto";
+}
+
+public class TestingConfiguration
+{
+    public string? Level { get; set; } = "unit"; // unit | integration | full | enterprise
+    public string? Framework { get; set; } = "xunit"; // xunit | nunit | mstest
+    public bool MockingEnabled { get; set; } = true;
+    public bool TestContainersEnabled { get; set; } = false;
 } 

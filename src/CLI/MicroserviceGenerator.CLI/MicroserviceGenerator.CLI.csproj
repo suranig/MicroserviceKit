@@ -50,6 +50,7 @@
     <ProjectReference Include="..\..\Modules\Application\Application.csproj" />
     <ProjectReference Include="..\..\Modules\Api\Api.csproj" />
     <ProjectReference Include="..\..\Modules\Tests\Tests.csproj" />
+    <ProjectReference Include="..\..\Modules\Deployment\Deployment.csproj" />
   </ItemGroup>
 
 </Project> 

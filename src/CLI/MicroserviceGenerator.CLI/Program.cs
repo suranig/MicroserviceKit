@@ -156,7 +156,7 @@ static TemplateConfiguration CreateDefaultConfig(string name)
         Namespace = $"Company.{name}",
         Architecture = new ArchitectureConfiguration
         {
-            Level = "minimal"
+            Level = "standard"
         },
         Domain = new DomainConfiguration
         {
@@ -183,6 +183,15 @@ static TemplateConfiguration CreateDefaultConfig(string name)
             Persistence = new PersistenceConfiguration
             {
                 Provider = "inmemory"
+            },
+            Testing = new TestingConfiguration
+            {
+                Level = "integration"
+            },
+            Deployment = new DeploymentConfiguration
+            {
+                Docker = "auto",
+                Kubernetes = "disabled"
             }
         }
     };
@@ -196,7 +205,9 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
         new DDDModule(),
         new Microservice.Modules.Application.ApplicationModule(),
         new Microservice.Modules.Api.RestApiModule(),
-        new Microservice.Modules.Tests.UnitTestModule()
+        new Microservice.Modules.Tests.UnitTestModule(),
+        new Microservice.Modules.Tests.IntegrationTestModule(),
+        new Microservice.Modules.Deployment.DeploymentModule()
     };
     
     foreach (var module in modules.Where(m => m.IsEnabled(config)))

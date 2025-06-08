@@ -130,6 +130,8 @@ public class RestApiModule : ITemplateModule
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -139,6 +141,12 @@ public class RestApiModule : ITemplateModule
     <PackageReference Include=""FluentValidation.AspNetCore"" Version=""11.3.0"" />
     <PackageReference Include=""Serilog.AspNetCore"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.16"" />
+    <PackageReference Include=""Microsoft.AspNetCore.RateLimiting"" Version=""8.0.16"" />
+    <PackageReference Include=""Microsoft.AspNetCore.ResponseCompression"" Version=""2.2.0"" />
+    <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning"" Version=""5.1.0"" />
+    <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer"" Version=""5.1.0"" />
+    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"" Version=""8.0.16"" />
+    <PackageReference Include=""AspNetCore.HealthChecks.UI.Client"" Version=""8.0.1"" />
   </ItemGroup>
 
   <ItemGroup>
@@ -200,20 +208,58 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {{
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {{
+        c.SwaggerEndpoint(""/swagger/v1/swagger.json"", ""{config.MicroserviceName} API V1"");
+        c.RoutePrefix = string.Empty; // Serve Swagger UI at root
+    }});
 }}
+
+// Security headers
+app.Use(async (context, next) =>
+{{
+    context.Response.Headers.Add(""X-Content-Type-Options"", ""nosniff"");
+    context.Response.Headers.Add(""X-Frame-Options"", ""DENY"");
+    context.Response.Headers.Add(""X-XSS-Protection"", ""1; mode=block"");
+    context.Response.Headers.Add(""Referrer-Policy"", ""strict-origin-when-cross-origin"");
+    await next();
+}});
+
+app.UseHttpsRedirection();
+app.UseResponseCompression();
+app.UseResponseCaching();
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<CorrelationMiddleware>();
 
-app.UseHttpsRedirection();
 app.UseCors();
+
+// Rate limiting
+app.UseRateLimiter();
 
 {(config.Features?.Api?.Authentication?.ToLowerInvariant() == "jwt" ? "app.UseAuthentication();\napp.UseAuthorization();" : "")}
 
-app.MapControllers();
+// Health checks
+app.MapHealthChecks(""/health"");
+app.MapHealthChecks(""/health/ready"", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{{
+    Predicate = check => check.Tags.Contains(""ready"")
+}});
+app.MapHealthChecks(""/health/live"", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{{
+    Predicate = _ => false
+}});
 
-app.Run();";
+// Add rate limiting to controllers
+app.MapControllers().RequireRateLimiting(""ApiPolicy"");
+
+// Metrics endpoint for Prometheus
+app.MapGet(""/metrics"", () => ""# Metrics endpoint for monitoring"");
+
+app.Run();
+
+// Make the implicit Program class public so test projects can access it
+public partial class Program {{ }}";
     }
 
     private string GenerateController(TemplateConfiguration config, AggregateConfiguration aggregate)
@@ -598,6 +644,8 @@ public class ValidationFilter : IActionFilter
     private string GenerateApiExtensions(TemplateConfiguration config)
     {
         return $@"using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace {config.Namespace}.Api.Extensions;
 
@@ -616,6 +664,50 @@ public static class ApiExtensions
             }});
         }});
 
+        // Add Rate Limiting
+        services.AddRateLimiter(options =>
+        {{
+            options.AddFixedWindowLimiter(""ApiPolicy"", limiterOptions =>
+            {{
+                limiterOptions.PermitLimit = configuration.GetValue<int>(""RateLimiting:PermitLimit"", 100);
+                limiterOptions.Window = TimeSpan.FromMinutes(configuration.GetValue<int>(""RateLimiting:WindowMinutes"", 1));
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.QueueLimit = configuration.GetValue<int>(""RateLimiting:QueueLimit"", 10);
+            }});
+
+            options.AddConcurrencyLimiter(""ConcurrencyPolicy"", limiterOptions =>
+            {{
+                limiterOptions.PermitLimit = configuration.GetValue<int>(""RateLimiting:ConcurrencyLimit"", 50);
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.QueueLimit = configuration.GetValue<int>(""RateLimiting:QueueLimit"", 10);
+            }});
+
+            options.OnRejected = async (context, token) =>
+            {{
+                context.HttpContext.Response.StatusCode = 429;
+                await context.HttpContext.Response.WriteAsync(""Too many requests. Please try again later."", token);
+            }};
+        }});
+
+        // Add Response Compression
+        services.AddResponseCompression(options =>
+        {{
+            options.EnableForHttps = true;
+            options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+            options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+        }});
+
+        // Add Response Caching
+        services.AddResponseCaching();
+
+        // Add Memory Cache
+        services.AddMemoryCache();
+
+        // Add Health Checks
+        services.AddHealthChecks()
+            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+            .AddDbContextCheck<{config.Namespace}.Infrastructure.Persistence.ApplicationDbContext>();
+
         // Configure Swagger
         services.AddSwaggerGen(c =>
         {{
@@ -623,7 +715,37 @@ public static class ApiExtensions
             {{
                 Title = ""{config.MicroserviceName} API"",
                 Version = ""v1"",
-                Description = ""API for {config.MicroserviceName} microservice""
+                Description = ""API for {config.MicroserviceName} microservice"",
+                Contact = new OpenApiContact
+                {{
+                    Name = ""API Support"",
+                    Email = ""support@example.com""
+                }}
+            }});
+
+            // Add security definition for JWT
+            c.AddSecurityDefinition(""Bearer"", new OpenApiSecurityScheme
+            {{
+                Description = ""JWT Authorization header using the Bearer scheme"",
+                Name = ""Authorization"",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = ""Bearer""
+            }});
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {{
+                {{
+                    new OpenApiSecurityScheme
+                    {{
+                        Reference = new OpenApiReference
+                        {{
+                            Type = ReferenceType.SecurityScheme,
+                            Id = ""Bearer""
+                        }}
+                    }},
+                    Array.Empty<string>()
+                }}
             }});
 
             // Add XML comments if available
@@ -633,6 +755,22 @@ public static class ApiExtensions
             {{
                 c.IncludeXmlComments(xmlPath);
             }}
+        }});
+
+        // Add API Versioning
+        services.AddApiVersioning(options =>
+        {{
+            options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
+                new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
+                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version""),
+                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
+            );
+        }}).AddVersionedApiExplorer(setup =>
+        {{
+            setup.GroupNameFormat = ""'v'VVV"";
+            setup.SubstituteApiVersionInUrl = true;
         }});
 
         return services;
@@ -691,6 +829,24 @@ public class CorrelationMiddleware
   ""AllowedHosts"": ""*"",
   ""ConnectionStrings"": {{
     ""DefaultConnection"": ""Server=(localdb)\\mssqllocaldb;Database={config.MicroserviceName}Db;Trusted_Connection=true;MultipleActiveResultSets=true""
+  }},
+  ""RateLimiting"": {{
+    ""PermitLimit"": 100,
+    ""WindowMinutes"": 1,
+    ""QueueLimit"": 10,
+    ""ConcurrencyLimit"": 50
+  }},
+  ""Features"": {{
+    ""RateLimiting"": {{
+      ""Enabled"": true
+    }},
+    ""ResponseCompression"": {{
+      ""Enabled"": true
+    }},
+    ""ResponseCaching"": {{
+      ""Enabled"": true,
+      ""DefaultDurationMinutes"": 5
+    }}
   }},
   ""Serilog"": {{
     ""Using"": [""Serilog.Sinks.Console"", ""Serilog.Sinks.File""],
