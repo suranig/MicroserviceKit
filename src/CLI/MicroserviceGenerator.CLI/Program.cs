@@ -391,6 +391,8 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
 static async Task GenerateProjectStructure(GenerationContext context)
 {
     var config = context.Configuration;
+    var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+    var sourceDir = structure.SourceDirectory;
     
     // Generate solution file
     var solutionContent = $@"
@@ -399,19 +401,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 
-Project(""{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}"") = ""src"", ""src"", ""{{66448982-949A-4E9E-9EFA-CED092C125CB}}""
+Project(""{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}"") = ""{sourceDir}"", ""{sourceDir}"", ""{{66448982-949A-4E9E-9EFA-CED092C125CB}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""src\\Api\\{config.MicroserviceName}.Api\\{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468ED}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468ED}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""src\\Application\\{config.MicroserviceName}.Application\\{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D1}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""{sourceDir}/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D1}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""src\\Domain\\{config.MicroserviceName}.Domain\\{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""{sourceDir}/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""src\\Infrastructure\\{config.MicroserviceName}.Infrastructure\\{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D8}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D8}}""
 EndProject
 ";
     
@@ -438,7 +440,7 @@ This microservice implements:
 ### Running locally
 ```bash
 dotnet restore
-dotnet run --project src/Api/{config.MicroserviceName}.Api
+dotnet run --project {sourceDir}/Api/{config.MicroserviceName}.Api
 ```
 
 ## API Documentation

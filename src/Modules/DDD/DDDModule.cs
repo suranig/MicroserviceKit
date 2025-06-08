@@ -15,6 +15,9 @@ public class DDDModule : ITemplateModule
 
     public async Task GenerateAsync(GenerationContext context)
     {
+        // Create Domain project structure and .csproj file
+        await CreateDomainProjectStructureAsync(context);
+
         if (context.Configuration.Domain?.Aggregates != null)
         {
             foreach (var aggregate in context.Configuration.Domain.Aggregates)
@@ -31,6 +34,39 @@ public class DDDModule : ITemplateModule
                 await GenerateValueObjectAsync(context, valueObject);
             }
         }
+    }
+
+    private async Task CreateDomainProjectStructureAsync(GenerationContext context)
+    {
+        var config = context.Configuration;
+        var domainPath = context.GetDomainProjectPath();
+
+        // Create directories
+        Directory.CreateDirectory(Path.Combine(domainPath, "Entities"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "Events"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "ValueObjects"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "Interfaces"));
+
+        // Generate .csproj file
+        var csprojContent = GenerateDomainProjectFile(config);
+        await File.WriteAllTextAsync(Path.Combine(domainPath, $"{config.MicroserviceName}.Domain.csproj"), csprojContent);
+    }
+
+    private string GenerateDomainProjectFile(TemplateConfiguration config)
+    {
+        return $@"<Project Sdk=""Microsoft.NET.Sdk"">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include=""AggregateKit"" Version=""0.2.0"" />
+  </ItemGroup>
+
+</Project>";
     }
 
     private async Task GenerateAggregateAsync(GenerationContext context, AggregateConfiguration aggregate)
@@ -146,7 +182,13 @@ public class {{AggregateName}} : AggregateRoot<Guid>
 
 namespace {{Namespace}}.Domain.Events;
 
-public record {{EventName}}({{Parameters}}) : DomainEventBase;";
+public class {{EventName}} : DomainEventBase
+{
+    public {{EventName}}({{Parameters}})
+    {
+        // Initialize properties from parameters
+    }
+}";
     }
 
     private string GetValueObjectTemplate()
