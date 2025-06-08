@@ -21,6 +21,8 @@ public class MessagingModule : ITemplateModule
         if (messagingConfig?.Provider?.ToLowerInvariant() == "rabbitmq")
         {
             await GenerateRabbitMQInfrastructureAsync(context);
+            await AddRabbitMQPackagesToInfrastructureAsync(context);
+            await UpdateInfrastructureExtensionsAsync(context);
         }
 
         // Generate domain events for each aggregate
@@ -875,5 +877,84 @@ public static class MessagingExtensions
     private string GenerateEventParameters(List<PropertyConfiguration> properties)
     {
         return string.Join(", ", properties.Select(p => $"{p.Type} {p.Name}"));
+    }
+
+    private async Task AddRabbitMQPackagesToInfrastructureAsync(GenerationContext context)
+    {
+        var config = context.Configuration;
+        var infrastructurePath = context.GetInfrastructureProjectPath();
+        var csprojPath = Path.Combine(infrastructurePath, $"{config.MicroserviceName}.Infrastructure.csproj");
+
+        if (File.Exists(csprojPath))
+        {
+            var content = await File.ReadAllTextAsync(csprojPath);
+            
+            // Add RabbitMQ packages if not already present
+            if (!content.Contains("RabbitMQ.Client"))
+            {
+                var packagesToAdd = @"    <PackageReference Include=""RabbitMQ.Client"" Version=""6.8.1"" />
+    <PackageReference Include=""Microsoft.Extensions.Hosting.Abstractions"" Version=""8.0.2"" />";
+
+                // Find the last PackageReference and add after it
+                var lastPackageIndex = content.LastIndexOf("PackageReference");
+                
+                if (lastPackageIndex != -1)
+                {
+                    // Find the end of the line containing the last PackageReference
+                    var lineEndIndex = content.IndexOf('\n', lastPackageIndex);
+                    if (lineEndIndex != -1)
+                    {
+                        var insertIndex = lineEndIndex + 1;
+                        content = content.Insert(insertIndex, packagesToAdd + "\n");
+                        await File.WriteAllTextAsync(csprojPath, content);
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task UpdateInfrastructureExtensionsAsync(GenerationContext context)
+    {
+        var config = context.Configuration;
+        var infrastructurePath = context.GetInfrastructureProjectPath();
+        var extensionsPath = Path.Combine(infrastructurePath, "Extensions", "ServiceCollectionExtensions.cs");
+
+        if (File.Exists(extensionsPath))
+        {
+            var content = await File.ReadAllTextAsync(extensionsPath);
+            
+            // Add messaging imports if not present
+            if (!content.Contains($"using {config.Namespace}.Infrastructure.Messaging.Configuration"))
+            {
+                var usingStatements = $@"using {config.Namespace}.Infrastructure.Messaging.Configuration;
+using {config.Namespace}.Infrastructure.Messaging.Publishers;
+using {config.Namespace}.Infrastructure.Messaging;";
+
+                var firstUsingIndex = content.IndexOf("using ");
+                if (firstUsingIndex != -1)
+                {
+                    content = content.Insert(firstUsingIndex, usingStatements + "\n");
+                }
+            }
+
+            // Add messaging registration if not present
+            if (!content.Contains("AddRabbitMQ"))
+            {
+                var messagingRegistration = @"
+        // Add messaging
+        services.AddRabbitMQ(configuration);
+        services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+        services.AddScoped<IOutboxRepository, OutboxRepository>();
+        services.AddHostedService<OutboxProcessor>();
+        services.AddScoped<IEventDispatcher, EventDispatcher>();";
+
+                var returnIndex = content.LastIndexOf("return services;");
+                if (returnIndex != -1)
+                {
+                    content = content.Insert(returnIndex, messagingRegistration + "\n\n        ");
+                    await File.WriteAllTextAsync(extensionsPath, content);
+                }
+            }
+        }
     }
 } 
