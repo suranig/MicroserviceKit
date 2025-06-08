@@ -94,7 +94,31 @@ This document outlines the step-by-step implementation plan for MicroserviceKit 
 - Liveness and readiness probes
 - Auto-scaling configuration
 
-### **Phase 5: Advanced Features (Days 14-18) 🚀**
+### **Phase 5: Messaging & Events (Days 14-17) 📨**
+
+#### Priority 1: MessagingModule
+**Estimated Time**: 2 days
+**Files to create**:
+- `src/Modules/Messaging/MessagingModule.cs`
+- `src/Modules/Messaging/Messaging.csproj`
+- Generate: Publishers, Consumers, Event handlers, RabbitMQ configuration
+
+#### Priority 2: Event-Driven Architecture
+**Estimated Time**: 1.5 days
+**Tasks**:
+- Domain event integration with aggregates
+- Outbox pattern implementation
+- Message routing and error handling
+- Integration with MassTransit or Wolverine
+
+#### Priority 3: Event Sourcing (Optional)
+**Estimated Time**: 0.5 days
+**Tasks**:
+- Event store patterns
+- Projection handlers
+- Saga patterns for long-running processes
+
+### **Phase 6: Advanced Features (Days 18-21) 🚀**
 
 #### Priority 1: Enhanced CQRS
 **Estimated Time**: 2 days
@@ -104,19 +128,19 @@ This document outlines the step-by-step implementation plan for MicroserviceKit 
 - Projection patterns
 
 #### Priority 2: Observability
-**Estimated Time**: 2 days
+**Estimated Time**: 1.5 days
 **Tasks**:
 - Structured logging with Serilog
 - Health checks
 - Metrics collection
 
 #### Priority 3: gRPC Support (Optional)
-**Estimated Time**: 1 day
+**Estimated Time**: 0.5 days
 **Files to create**:
 - `src/Modules/Api/GrpcApiModule.cs`
 - Generate: Proto files, gRPC services
 
-### **Phase 6: Testing & Release (Days 19-20) ✅**
+### **Phase 7: Testing & Release (Days 22-23) ✅**
 
 #### Priority 1: End-to-End Testing
 **Estimated Time**: 1 day
