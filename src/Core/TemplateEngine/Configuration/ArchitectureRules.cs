@@ -17,6 +17,7 @@ public static class ArchitectureRules
         decisions.ApiStyle = DetermineApiStyle(config, decisions.ArchitectureLevel);
         decisions.PersistenceStrategy = DeterminePersistence(config);
         decisions.EnableDocker = ShouldEnableDocker(config, decisions.ArchitectureLevel);
+        decisions.EnableInfrastructure = ShouldEnableInfrastructure(config, decisions.ArchitectureLevel);
         
         return decisions;
     }
@@ -133,6 +134,25 @@ public static class ArchitectureRules
             _ => level >= ArchitectureLevel.Standard // auto
         };
     }
+    
+    private static bool ShouldEnableInfrastructure(TemplateConfiguration config, ArchitectureLevel level)
+    {
+        // Infrastructure layer potrzebny gdy:
+        var hasExternalServices = config.Features?.ExternalServices?.Enabled == true;
+        var hasMessaging = config.Features?.Messaging?.Enabled == true;
+        var hasBackgroundJobs = config.Features?.BackgroundJobs?.Enabled == true;
+        var hasCaching = config.Features?.Database?.Cache?.Enabled == true;
+        var hasSeparateReadModel = config.Features?.Database?.ReadModel?.Provider != "same";
+        var hasComplexPersistence = config.Features?.Database?.EventStore?.Enabled == true;
+        
+        return level switch
+        {
+            ArchitectureLevel.Minimal => false, // Nigdy dla minimal
+            ArchitectureLevel.Standard => hasExternalServices || hasMessaging || hasCaching,
+            ArchitectureLevel.Enterprise => true, // Zawsze dla enterprise
+            _ => false
+        };
+    }
 }
 
 public class ArchitectureDecisions
@@ -144,6 +164,7 @@ public class ArchitectureDecisions
     public ApiStyle ApiStyle { get; set; }
     public PersistenceStrategy PersistenceStrategy { get; set; } = new();
     public bool EnableDocker { get; set; }
+    public bool EnableInfrastructure { get; set; }
 }
 
 public enum ComplexityLevel { Simple, Medium, Complex }

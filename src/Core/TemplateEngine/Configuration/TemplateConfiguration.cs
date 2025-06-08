@@ -31,6 +31,12 @@ public class FeaturesConfiguration
     public MessagingConfiguration? Messaging { get; set; }
     public ObservabilityConfiguration? Observability { get; set; }
     public DeploymentConfiguration? Deployment { get; set; }
+    
+    // Enterprise features
+    public DatabaseConfiguration? Database { get; set; }
+    public EnvironmentConfiguration? Environment { get; set; }
+    public ExternalServicesConfiguration? ExternalServices { get; set; }
+    public BackgroundJobsConfiguration? BackgroundJobs { get; set; }
 }
 
 public class DomainConfiguration

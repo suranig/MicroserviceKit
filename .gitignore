@@ -5,3 +5,7 @@
 # Visual Studio
 .vs/
 
+# Migration history files (keep in version control for team collaboration)
+# .microservice-history.json - KEEP this file versioned!
+# It contains migration history and project evolution tracking
+

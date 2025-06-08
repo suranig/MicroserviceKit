@@ -22,6 +22,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\TemplateEngine\TemplateEngine.csproj" />
     <ProjectReference Include="..\..\Modules\DDD\DDD.csproj" />
+    <ProjectReference Include="..\..\Modules\Application\Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Api\Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Tests\Tests.csproj" />
   </ItemGroup>
 
 </Project> 

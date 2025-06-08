@@ -3,8 +3,9 @@ using System.Text.Json;
 using Microservice.Core.TemplateEngine.Configuration;
 using Microservice.Core.TemplateEngine.Abstractions;
 using Microservice.Modules.DDD;
+using MicroserviceGenerator.CLI.Commands;
 
-var rootCommand = new RootCommand("Microservice Template Generator - cookiecutter for .NET microservices");
+var rootCommand = new RootCommand("Microservice Generator - Create and manage .NET 8 microservices with DDD patterns");
 
 // Command: new
 var newCommand = new Command("new", "Generate a new microservice from template");
@@ -76,8 +77,11 @@ addAggregateCommand.SetHandler(async (string aggregateName, string[] properties)
 
 addCommand.AddCommand(addAggregateCommand);
 
+// Add commands
 rootCommand.AddCommand(newCommand);
 rootCommand.AddCommand(addCommand);
+rootCommand.AddCommand(MigrateCommand.Create());
+rootCommand.AddCommand(HistoryCommand.Create());
 
 return await rootCommand.InvokeAsync(args);
 
@@ -169,6 +173,17 @@ static TemplateConfiguration CreateDefaultConfig(string name)
                     Operations = new List<string> { "Create", "MarkComplete" }
                 }
             }
+        },
+        Features = new FeaturesConfiguration
+        {
+            Api = new ApiConfiguration
+            {
+                Style = "controllers"
+            },
+            Persistence = new PersistenceConfiguration
+            {
+                Provider = "inmemory"
+            }
         }
     };
 }
@@ -178,8 +193,10 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
     var context = new GenerationContext(config);
     var modules = new List<ITemplateModule>
     {
-        new DDDModule()
-        // Add more modules here
+        new DDDModule(),
+        new Microservice.Modules.Application.ApplicationModule(),
+        new Microservice.Modules.Api.RestApiModule(),
+        new Microservice.Modules.Tests.UnitTestModule()
     };
     
     foreach (var module in modules.Where(m => m.IsEnabled(config)))

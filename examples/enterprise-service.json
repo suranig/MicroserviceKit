@@ -1,0 +1,239 @@
+{
+  "microserviceName": "PaymentService",
+  "namespace": "ECommerce.PaymentService",
+  "outputPath": "./generated",
+  
+  "architecture": {
+    "level": "enterprise",
+    "patterns": {
+      "ddd": "enabled",
+      "cqrs": "enabled",
+      "eventSourcing": "enabled"
+    }
+  },
+
+  "features": {
+    "api": {
+      "style": "both",
+      "authentication": "jwt",
+      "documentation": "swagger"
+    },
+    
+    "database": {
+      "writeModel": {
+        "provider": "postgresql",
+        "connectionString": "env:WRITE_DB_CONNECTION",
+        "enableMigrations": true,
+        "enableAuditing": true,
+        "enableSoftDelete": true
+      },
+      "readModel": {
+        "provider": "mongodb",
+        "connectionString": "env:READ_DB_CONNECTION",
+        "enableProjections": true,
+        "syncStrategy": "eventual"
+      },
+      "cache": {
+        "enabled": true,
+        "provider": "redis",
+        "connectionString": "env:REDIS_CONNECTION",
+        "defaultTtlMinutes": 30,
+        "cachedQueries": ["GetPaymentById", "GetPaymentsByCustomer"]
+      },
+      "eventStore": {
+        "enabled": true,
+        "provider": "postgresql",
+        "connectionString": "env:EVENTSTORE_CONNECTION",
+        "enableSnapshots": true,
+        "snapshotFrequency": 10
+      }
+    },
+    
+    "environment": {
+      "useDotEnv": true,
+      "useKeyVault": true,
+      "keyVaultUrl": "env:KEY_VAULT_URL",
+      "variables": [
+        {
+          "name": "WRITE_DB_CONNECTION",
+          "defaultValue": "Host=localhost;Database=payments_write;Username=postgres;Password=password",
+          "isSecret": true,
+          "description": "Write model database connection string"
+        },
+        {
+          "name": "READ_DB_CONNECTION", 
+          "defaultValue": "mongodb://localhost:27017/payments_read",
+          "isSecret": true,
+          "description": "Read model database connection string"
+        },
+        {
+          "name": "REDIS_CONNECTION",
+          "defaultValue": "localhost:6379",
+          "isSecret": true,
+          "description": "Redis cache connection string"
+        },
+        {
+          "name": "PAYMENT_GATEWAY_URL",
+          "defaultValue": "https://api.stripe.com",
+          "isSecret": false,
+          "description": "Payment gateway base URL"
+        },
+        {
+          "name": "PAYMENT_GATEWAY_SECRET",
+          "defaultValue": "",
+          "isSecret": true,
+          "description": "Payment gateway API secret"
+        }
+      ]
+    },
+    
+    "externalServices": {
+      "enabled": true,
+      "services": [
+        {
+          "name": "PaymentGateway",
+          "baseUrl": "env:PAYMENT_GATEWAY_URL",
+          "type": "http",
+          "authentication": {
+            "type": "bearer",
+            "settings": {
+              "tokenSource": "env:PAYMENT_GATEWAY_SECRET"
+            }
+          },
+          "operations": ["ProcessPayment", "RefundPayment", "GetPaymentStatus"]
+        },
+        {
+          "name": "NotificationService",
+          "baseUrl": "env:NOTIFICATION_SERVICE_URL",
+          "type": "grpc",
+          "operations": ["SendPaymentConfirmation", "SendPaymentFailure"]
+        },
+        {
+          "name": "FraudDetectionService",
+          "baseUrl": "env:FRAUD_DETECTION_URL",
+          "type": "http",
+          "authentication": {
+            "type": "apikey",
+            "settings": {
+              "headerName": "X-API-Key",
+              "keySource": "env:FRAUD_DETECTION_KEY"
+            }
+          },
+          "operations": ["CheckTransaction", "ReportFraud"]
+        }
+      ],
+      "resilience": {
+        "retry": {
+          "enabled": true,
+          "maxAttempts": 3,
+          "strategy": "exponential",
+          "baseDelayMs": 1000
+        },
+        "circuitBreaker": {
+          "enabled": true,
+          "failureThreshold": 5,
+          "timeoutMs": 30000,
+          "recoveryTimeMs": 60000
+        },
+        "timeout": {
+          "enabled": true,
+          "defaultTimeoutMs": 30000
+        },
+        "bulkhead": {
+          "enabled": true,
+          "maxConcurrency": 10,
+          "queueCapacity": 100
+        }
+      }
+    },
+    
+    "messaging": {
+      "enabled": true,
+      "provider": "rabbitmq",
+      "patterns": ["outbox", "saga", "events"]
+    },
+    
+    "backgroundJobs": {
+      "enabled": true,
+      "provider": "hangfire",
+      "connectionString": "env:HANGFIRE_CONNECTION",
+      "jobs": [
+        {
+          "name": "ProcessPendingPayments",
+          "schedule": "0 */5 * * * *",
+          "type": "recurring",
+          "parameters": {
+            "batchSize": 100,
+            "timeoutMinutes": 30
+          }
+        },
+        {
+          "name": "ReconcilePayments",
+          "schedule": "0 0 2 * * *",
+          "type": "recurring",
+          "parameters": {
+            "lookbackDays": 1
+          }
+        }
+      ]
+    },
+    
+    "observability": {
+      "logging": "serilog",
+      "metrics": "prometheus",
+      "tracing": "opentelemetry"
+    },
+    
+    "deployment": {
+      "docker": "enabled",
+      "kubernetes": "enabled",
+      "healthChecks": "enabled"
+    }
+  },
+
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Payment",
+        "properties": [
+          { "name": "CustomerId", "type": "Guid" },
+          { "name": "Amount", "type": "Money" },
+          { "name": "Currency", "type": "string" },
+          { "name": "Status", "type": "PaymentStatus" },
+          { "name": "GatewayTransactionId", "type": "string" },
+          { "name": "ProcessedAt", "type": "DateTime?" }
+        ],
+        "operations": ["Create", "Process", "Confirm", "Fail", "Refund", "Cancel"]
+      },
+      {
+        "name": "PaymentMethod",
+        "properties": [
+          { "name": "CustomerId", "type": "Guid" },
+          { "name": "Type", "type": "PaymentMethodType" },
+          { "name": "Token", "type": "string" },
+          { "name": "ExpiryDate", "type": "DateTime?" },
+          { "name": "IsDefault", "type": "bool" }
+        ],
+        "operations": ["Create", "Update", "Delete", "SetAsDefault"]
+      }
+    ],
+    "valueObjects": [
+      {
+        "name": "Money",
+        "properties": [
+          { "name": "Amount", "type": "decimal" },
+          { "name": "Currency", "type": "string" }
+        ]
+      },
+      {
+        "name": "PaymentGatewayResponse",
+        "properties": [
+          { "name": "TransactionId", "type": "string" },
+          { "name": "Status", "type": "string" },
+          { "name": "Message", "type": "string" },
+          { "name": "ProcessedAt", "type": "DateTime" }
+        ]
+      }
+    ]
+  }
+} 
