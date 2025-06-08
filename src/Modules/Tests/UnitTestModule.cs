@@ -17,7 +17,7 @@ public class UnitTestModule : ITemplateModule
     public async Task GenerateAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var outputPath = Path.Combine(config.OutputPath, "tests", $"{config.MicroserviceName}.UnitTests");
+        var outputPath = context.GetTestsProjectPath();
 
         // Create test project structure
         await CreateTestProjectStructureAsync(outputPath, config);
@@ -155,6 +155,18 @@ public class UnitTestModule : ITemplateModule
 
     private string GenerateTestProjectFile(TemplateConfiguration config)
     {
+        // Calculate relative paths from tests to source projects
+        var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+        var domainPath = structure.DomainProjectPath
+            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{MicroserviceName}", config.MicroserviceName);
+        var applicationPath = structure.ApplicationProjectPath
+            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{MicroserviceName}", config.MicroserviceName);
+        var infrastructurePath = structure.InfrastructureProjectPath
+            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{MicroserviceName}", config.MicroserviceName);
+
         return $@"<Project Sdk=""Microsoft.NET.Sdk"">
 
   <PropertyGroup>
@@ -180,9 +192,9 @@ public class UnitTestModule : ITemplateModule
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=""..\..\src\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />
-    <ProjectReference Include=""..\..\src\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />
-    <ProjectReference Include=""..\..\src\Infrastructure\{config.MicroserviceName}.Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />
+    <ProjectReference Include=""..\..\{domainPath}\{config.MicroserviceName}.Domain.csproj"" />
+    <ProjectReference Include=""..\..\{applicationPath}\{config.MicroserviceName}.Application.csproj"" />
+    <ProjectReference Include=""..\..\{infrastructurePath}\{config.MicroserviceName}.Infrastructure.csproj"" />
   </ItemGroup>
 
 </Project>";

@@ -142,7 +142,10 @@ public class DeploymentModule : ITemplateModule
 
     private string GenerateDockerfile(TemplateConfiguration config)
     {
-        return $@"# Linux Dockerfile for production
+        var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+        var sourceDir = structure.SourceDirectory;
+        
+        return $@"# Multi-stage Dockerfile for production deployment
 # Build arguments
 ARG VERSION=1.0.0
 
@@ -151,17 +154,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0.16 AS build
 WORKDIR /src
 
 # Copy csproj files and restore dependencies (layer caching optimization)
-COPY [""src/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""src/Api/{config.MicroserviceName}.Api/""]
-COPY [""src/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""src/Application/{config.MicroserviceName}.Application/""]
-COPY [""src/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""src/Infrastructure/{config.MicroserviceName}.Infrastructure/""]
-COPY [""src/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""src/Domain/{config.MicroserviceName}.Domain/""]
+COPY [""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""{sourceDir}/Api/{config.MicroserviceName}.Api/""]
+COPY [""{sourceDir}/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""{sourceDir}/Application/{config.MicroserviceName}.Application/""]
+COPY [""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/""]
+COPY [""{sourceDir}/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""{sourceDir}/Domain/{config.MicroserviceName}.Domain/""]
 
 # Restore dependencies
-RUN dotnet restore ""src/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj""
+RUN dotnet restore ""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj""
 
 # Copy source code and build
 COPY . .
-WORKDIR ""/src/src/Api/{config.MicroserviceName}.Api""
+WORKDIR ""/src/{sourceDir}/Api/{config.MicroserviceName}.Api""
 RUN dotnet build ""{config.MicroserviceName}.Api.csproj"" -c Release -o /app/build --no-restore
 
 # Publish stage
@@ -219,6 +222,9 @@ ENTRYPOINT [""dotnet"", ""{config.MicroserviceName}.Api.dll""]";
 
     private string GenerateDockerfileWindows(TemplateConfiguration config)
     {
+        var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+        var sourceDir = structure.SourceDirectory;
+        
         return $@"# Windows Dockerfile for local development
 # Build arguments
 ARG VERSION=1.0.0
@@ -228,17 +234,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0.16-windowsservercore-ltsc2022 AS build
 WORKDIR /src
 
 # Copy csproj files and restore dependencies (layer caching optimization)
-COPY [""src/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""src/Api/{config.MicroserviceName}.Api/""]
-COPY [""src/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""src/Application/{config.MicroserviceName}.Application/""]
-COPY [""src/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""src/Infrastructure/{config.MicroserviceName}.Infrastructure/""]
-COPY [""src/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""src/Domain/{config.MicroserviceName}.Domain/""]
+COPY [""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""{sourceDir}/Api/{config.MicroserviceName}.Api/""]
+COPY [""{sourceDir}/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""{sourceDir}/Application/{config.MicroserviceName}.Application/""]
+COPY [""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/""]
+COPY [""{sourceDir}/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""{sourceDir}/Domain/{config.MicroserviceName}.Domain/""]
 
 # Restore dependencies
-RUN dotnet restore ""src/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj""
+RUN dotnet restore ""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj""
 
 # Copy source code and build
 COPY . .
-WORKDIR ""/src/src/Api/{config.MicroserviceName}.Api""
+WORKDIR ""/src/{sourceDir}/Api/{config.MicroserviceName}.Api""
 RUN dotnet build ""{config.MicroserviceName}.Api.csproj"" -c Release -o /app/build --no-restore
 
 # Publish stage
@@ -425,6 +431,9 @@ volumes:
 
     private string GenerateDockerComposeOverride(TemplateConfiguration config)
     {
+        var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+        var sourceDir = structure.SourceDirectory;
+        
         return $@"version: '3.8'
 
 services:
@@ -433,7 +442,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
     volumes:
-      - ../src:/app/src:ro
+      - ../{sourceDir}:/app/src:ro
     ports:
       - ""5000:8080""
     
@@ -1135,6 +1144,10 @@ samples/";
     private string GenerateMakefile(TemplateConfiguration config)
     {
         var serviceName = config.MicroserviceName.ToLowerInvariant();
+        var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+        var infrastructurePath = structure.InfrastructureProjectPath
+            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{MicroserviceName}", config.MicroserviceName);
         
         return $@"# {config.MicroserviceName} Makefile
 # Version management and common tasks
@@ -1280,11 +1293,11 @@ dev-stop-windows: ## Stop Windows development environment
 # Database commands
 db-migrate: ## Run database migrations
 	@echo ""$(BLUE)Running database migrations...$(NC)""
-	dotnet ef database update --project src/Infrastructure/{config.MicroserviceName}.Infrastructure
+	dotnet ef database update --project {infrastructurePath}
 
 db-migration: ## Create new migration (usage: make db-migration NAME=MigrationName)
 	@echo ""$(BLUE)Creating migration: $(NAME)$(NC)""
-	dotnet ef migrations add $(NAME) --project src/Infrastructure/{config.MicroserviceName}.Infrastructure
+	dotnet ef migrations add $(NAME) --project {infrastructurePath}
 
 # Release commands
 release-patch: version-patch docker-build docker-push ## Release patch version

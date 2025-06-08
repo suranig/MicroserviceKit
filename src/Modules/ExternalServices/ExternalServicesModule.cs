@@ -36,82 +36,91 @@ public class ExternalServicesModule : ITemplateModule
     private async Task GenerateServiceClientAsync(GenerationContext context, ExternalServiceConfiguration service)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Create external services directory
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ExternalServices", "Clients"));
+        var externalServicesPath = Path.Combine(infrastructurePath, "ExternalServices", service.Name);
+        Directory.CreateDirectory(externalServicesPath);
 
+        // Generate service client
         var clientContent = GenerateServiceClient(config, service);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "Clients", $"{service.Name}Client.cs"),
+            Path.Combine(externalServicesPath, $"{service.Name}Client.cs"),
             clientContent);
     }
 
     private async Task GenerateServiceInterfaceAsync(GenerationContext context, ExternalServiceConfiguration service)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
-        // Create external services directory
-        Directory.CreateDirectory(Path.Combine(applicationPath, "ExternalServices"));
+        // Create external services directory in Application layer
+        var externalServicesPath = Path.Combine(applicationPath, "ExternalServices");
+        Directory.CreateDirectory(externalServicesPath);
 
+        // Generate service interface
         var interfaceContent = GenerateServiceInterface(config, service);
         await File.WriteAllTextAsync(
-            Path.Combine(applicationPath, "ExternalServices", $"I{service.Name}Service.cs"),
+            Path.Combine(externalServicesPath, $"I{service.Name}Service.cs"),
             interfaceContent);
     }
 
     private async Task GenerateResilienceInfrastructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Create resilience directory
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ExternalServices", "Resilience"));
+        var resiliencePath = Path.Combine(infrastructurePath, "ExternalServices", "Resilience");
+        Directory.CreateDirectory(resiliencePath);
 
         // Generate resilience policies
-        var resiliencePolicies = GenerateResiliencePolicies(config);
+        var resiliencePoliciesContent = GenerateResiliencePolicies(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "Resilience", "ResiliencePolicies.cs"),
-            resiliencePolicies);
+            Path.Combine(resiliencePath, "ResiliencePolicies.cs"),
+            resiliencePoliciesContent);
 
         // Generate HTTP client factory
-        var httpClientFactory = GenerateHttpClientFactory(config);
+        var httpClientFactoryContent = GenerateHttpClientFactory(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "HttpClientFactory.cs"),
-            httpClientFactory);
+            Path.Combine(resiliencePath, "HttpClientFactory.cs"),
+            httpClientFactoryContent);
 
         // Generate authentication handlers
-        var authHandlers = GenerateAuthenticationHandlers(config);
+        var authHandlersContent = GenerateAuthenticationHandlers(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "Authentication", "AuthenticationHandlers.cs"),
-            authHandlers);
+            Path.Combine(resiliencePath, "AuthenticationHandlers.cs"),
+            authHandlersContent);
     }
 
     private async Task GenerateServiceRegistryAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
-        // Create service registry
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ExternalServices", "Registry"));
+        // Create service registry directory
+        var serviceRegistryPath = Path.Combine(infrastructurePath, "ExternalServices", "Registry");
+        Directory.CreateDirectory(serviceRegistryPath);
 
-        var serviceRegistry = GenerateServiceRegistry(config);
+        // Generate service registry
+        var serviceRegistryContent = GenerateServiceRegistry(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "Registry", "ServiceRegistry.cs"),
-            serviceRegistry);
+            Path.Combine(serviceRegistryPath, "ServiceRegistry.cs"),
+            serviceRegistryContent);
 
-        var serviceDiscovery = GenerateServiceDiscovery(config);
+        // Generate service discovery
+        var serviceDiscoveryContent = GenerateServiceDiscovery(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ExternalServices", "Registry", "ServiceDiscovery.cs"),
-            serviceDiscovery);
+            Path.Combine(serviceRegistryPath, "ServiceDiscovery.cs"),
+            serviceDiscoveryContent);
     }
 
     private async Task GenerateExternalServicesExtensionsAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
+        // Generate external services extensions
         var extensionsContent = GenerateExternalServicesExtensions(config);
         await File.WriteAllTextAsync(
             Path.Combine(infrastructurePath, "Extensions", "ExternalServicesExtensions.cs"),

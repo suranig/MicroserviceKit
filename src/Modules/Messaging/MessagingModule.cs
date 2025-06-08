@@ -42,7 +42,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateRabbitMQInfrastructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Create messaging directories
         Directory.CreateDirectory(Path.Combine(infrastructurePath, "Messaging"));
@@ -72,7 +72,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateDomainEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var domainPath = Path.Combine(config.OutputPath, "src", "Domain", $"{config.MicroserviceName}.Domain");
+        var domainPath = context.GetDomainProjectPath();
 
         // Generate additional domain events for the aggregate
         var events = new[]
@@ -99,7 +99,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateEventHandlersAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
         // Create event handlers directory
         var eventHandlersPath = Path.Combine(applicationPath, aggregate.Name, "EventHandlers");
@@ -131,7 +131,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateEventDispatcherAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
         // Create common directory
         Directory.CreateDirectory(Path.Combine(applicationPath, "Common", "Events"));
@@ -158,7 +158,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateOutboxPatternAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate outbox entity
         var outboxEntity = GenerateOutboxEntity(config);
@@ -176,7 +176,7 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateMessagingExtensionsAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate messaging extensions
         var messagingExtensions = GenerateMessagingExtensions(config);

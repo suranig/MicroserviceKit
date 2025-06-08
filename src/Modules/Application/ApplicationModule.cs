@@ -18,7 +18,7 @@ public class ApplicationModule : ITemplateModule
     public async Task GenerateAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var outputPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var outputPath = context.GetApplicationProjectPath();
 
         // Create project structure
         await CreateProjectStructureAsync(outputPath, config);

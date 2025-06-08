@@ -17,7 +17,7 @@ public class RestApiModule : ITemplateModule
     public async Task GenerateAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var outputPath = Path.Combine(config.OutputPath, "src", "Api", $"{config.MicroserviceName}.Api");
+        var outputPath = context.GetApiProjectPath();
 
         // Create project structure
         await CreateProjectStructureAsync(outputPath, config);

@@ -9,6 +9,18 @@ public class TemplateConfiguration
     public ArchitectureConfiguration? Architecture { get; set; }
     public FeaturesConfiguration? Features { get; set; }
     public DomainConfiguration? Domain { get; set; }
+    public ProjectStructureConfiguration? ProjectStructure { get; set; }
+}
+
+public class ProjectStructureConfiguration
+{
+    public string SourceDirectory { get; set; } = "src";
+    public string DomainProjectPath { get; set; } = "{SourceDirectory}/Domain/{MicroserviceName}.Domain";
+    public string ApplicationProjectPath { get; set; } = "{SourceDirectory}/Application/{MicroserviceName}.Application";
+    public string InfrastructureProjectPath { get; set; } = "{SourceDirectory}/Infrastructure/{MicroserviceName}.Infrastructure";
+    public string ApiProjectPath { get; set; } = "{SourceDirectory}/Api/{MicroserviceName}.Api";
+    public string TestsProjectPath { get; set; } = "tests/{MicroserviceName}.Tests";
+    public string IntegrationTestsProjectPath { get; set; } = "tests/{MicroserviceName}.IntegrationTests";
 }
 
 public class ArchitectureConfiguration

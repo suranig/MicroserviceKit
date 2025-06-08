@@ -43,7 +43,8 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateConstructor(aggregate))
             .Replace("{{Methods}}", GenerateMethods(aggregate));
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/Entities/{aggregate.Name}.cs", content);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/Entities/{aggregate.Name}.cs", content);
     }
 
     private async Task GenerateAggregateEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
@@ -55,7 +56,8 @@ public class DDDModule : ITemplateModule
             .Replace("{{EventName}}", $"{aggregate.Name}CreatedEvent")
             .Replace("{{Parameters}}", $"Guid {aggregate.Name}Id, {GenerateEventParameters(aggregate.Properties)}");
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
     }
 
     private async Task GenerateValueObjectAsync(GenerationContext context, ValueObjectConfiguration valueObject)
@@ -68,7 +70,8 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateValueObjectConstructor(valueObject))
             .Replace("{{EqualityComponents}}", GenerateEqualityComponents(valueObject.Properties));
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/ValueObjects/{valueObject.Name}.cs", content);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/ValueObjects/{valueObject.Name}.cs", content);
     }
 
     private string GenerateProperties(List<PropertyConfiguration> properties)

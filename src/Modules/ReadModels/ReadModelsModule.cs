@@ -42,7 +42,7 @@ public class ReadModelsModule : ITemplateModule
     private async Task GenerateReadModelsAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
         // Create read models directory
         var readModelsPath = Path.Combine(applicationPath, aggregate.Name, "ReadModels");
@@ -54,13 +54,13 @@ public class ReadModelsModule : ITemplateModule
             Path.Combine(readModelsPath, $"{aggregate.Name}ReadModel.cs"),
             readModelContent);
 
-        // Generate list read model (for queries)
+        // Generate list read model (optimized for lists)
         var listReadModelContent = GenerateListReadModel(config, aggregate);
         await File.WriteAllTextAsync(
             Path.Combine(readModelsPath, $"{aggregate.Name}ListReadModel.cs"),
             listReadModelContent);
 
-        // Generate summary read model (for dashboards)
+        // Generate summary read model (minimal data)
         var summaryReadModelContent = GenerateSummaryReadModel(config, aggregate);
         await File.WriteAllTextAsync(
             Path.Combine(readModelsPath, $"{aggregate.Name}SummaryReadModel.cs"),
@@ -70,47 +70,48 @@ public class ReadModelsModule : ITemplateModule
     private async Task GenerateReadRepositoriesAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
         // Create repositories directory
         var repositoriesPath = Path.Combine(applicationPath, aggregate.Name, "Repositories");
         Directory.CreateDirectory(repositoriesPath);
 
         // Generate read repository interface
-        var readRepositoryInterface = GenerateReadRepositoryInterface(config, aggregate);
+        var repositoryInterfaceContent = GenerateReadRepositoryInterface(config, aggregate);
         await File.WriteAllTextAsync(
             Path.Combine(repositoriesPath, $"I{aggregate.Name}ReadRepository.cs"),
-            readRepositoryInterface);
+            repositoryInterfaceContent);
 
         // Generate read repository implementation (will be in Infrastructure)
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ReadModels", "Repositories"));
+        var infrastructurePath = context.GetInfrastructureProjectPath();
+        var readRepositoriesPath = Path.Combine(infrastructurePath, "Persistence", "Read");
+        Directory.CreateDirectory(readRepositoriesPath);
 
-        var readRepositoryImplementation = GenerateReadRepositoryImplementation(config, aggregate);
+        var repositoryImplementationContent = GenerateReadRepositoryImplementation(config, aggregate);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ReadModels", "Repositories", $"{aggregate.Name}ReadRepository.cs"),
-            readRepositoryImplementation);
+            Path.Combine(readRepositoriesPath, $"{aggregate.Name}ReadRepository.cs"),
+            repositoryImplementationContent);
     }
 
     private async Task GenerateMongoDbInfrastructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = Path.Combine(config.OutputPath, "src", "Infrastructure", $"{config.MicroserviceName}.Infrastructure");
+        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Create MongoDB directories
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ReadModels"));
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "ReadModels", "Configuration"));
+        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Persistence", "Read"));
+        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Persistence", "Read", "Configuration"));
 
         // Generate MongoDB context
         var mongoContextContent = GenerateMongoDbContext(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ReadModels", "MongoDbContext.cs"),
+            Path.Combine(infrastructurePath, "Persistence", "Read", "ReadModelDbContext.cs"),
             mongoContextContent);
 
         // Generate MongoDB configuration
         var mongoConfigContent = GenerateMongoDbConfiguration(config);
         await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "ReadModels", "Configuration", "MongoDbConfiguration.cs"),
+            Path.Combine(infrastructurePath, "Persistence", "Read", "Configuration", "MongoDbConfiguration.cs"),
             mongoConfigContent);
 
         // Generate MongoDB extensions
@@ -123,13 +124,13 @@ public class ReadModelsModule : ITemplateModule
     private async Task GenerateReadModelExtensionsAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var applicationPath = Path.Combine(config.OutputPath, "src", "Application", $"{config.MicroserviceName}.Application");
+        var applicationPath = context.GetApplicationProjectPath();
 
-        // Generate read model extensions
-        var readModelExtensions = GenerateReadModelServiceExtensions(config);
+        // Generate service collection extensions for read models
+        var extensionsContent = GenerateReadModelServiceExtensions(config);
         await File.WriteAllTextAsync(
             Path.Combine(applicationPath, "Extensions", "ReadModelExtensions.cs"),
-            readModelExtensions);
+            extensionsContent);
     }
 
     private string GenerateReadModel(TemplateConfiguration config, AggregateConfiguration aggregate)
