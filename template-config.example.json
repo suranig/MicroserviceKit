@@ -1,0 +1,104 @@
+{
+  "microserviceName": "OrderService",
+  "namespace": "ECommerce.OrderService",
+  "outputPath": "./generated",
+  "ddd": {
+    "enabled": true,
+    "aggregates": [
+      {
+        "name": "Order",
+        "properties": [
+          {
+            "name": "CustomerId",
+            "type": "Guid",
+            "isRequired": true
+          },
+          {
+            "name": "TotalAmount",
+            "type": "decimal",
+            "isRequired": true
+          },
+          {
+            "name": "Status",
+            "type": "OrderStatus",
+            "isRequired": true
+          }
+        ],
+        "methods": ["AddItem", "RemoveItem", "Confirm", "Cancel"]
+      },
+      {
+        "name": "Customer",
+        "properties": [
+          {
+            "name": "Email",
+            "type": "string",
+            "isRequired": true
+          },
+          {
+            "name": "Name",
+            "type": "string",
+            "isRequired": true
+          }
+        ],
+        "methods": ["UpdateEmail", "UpdateName"]
+      }
+    ],
+    "valueObjects": [
+      {
+        "name": "Money",
+        "properties": [
+          {
+            "name": "Amount",
+            "type": "decimal",
+            "isRequired": true
+          },
+          {
+            "name": "Currency",
+            "type": "string",
+            "isRequired": true
+          }
+        ]
+      },
+      {
+        "name": "Address",
+        "properties": [
+          {
+            "name": "Street",
+            "type": "string",
+            "isRequired": true
+          },
+          {
+            "name": "City",
+            "type": "string",
+            "isRequired": true
+          },
+          {
+            "name": "PostalCode",
+            "type": "string",
+            "isRequired": true
+          }
+        ]
+      }
+    ]
+  },
+  "cqrs": {
+    "enabled": true,
+    "mediator": "wolverine"
+  },
+  "api": {
+    "types": ["rest"],
+    "authentication": "none"
+  },
+  "persistence": {
+    "writeModel": "inmemory",
+    "readModel": "inmemory"
+  },
+  "messaging": {
+    "enabled": false,
+    "provider": "inmemory"
+  },
+  "containerization": {
+    "docker": false,
+    "kubernetes": false
+  }
+} 
