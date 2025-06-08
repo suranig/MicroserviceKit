@@ -4,7 +4,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MicroserviceKit?style=flat-square&logo=nuget&color=green)](https://www.nuget.org/packages/MicroserviceKit/)
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/badge/GitHub-MicroserviceKit-black?style=flat-square&logo=github)](https://github.com/suranig/microservice-net8-ddd)
+[![GitHub](https://img.shields.io/badge/GitHub-MicroserviceKit-black?style=flat-square&logo=github)](https://github.com/suranig/MicroserviceKit)
 
 A powerful, configurable template generator for .NET 8 microservices with a modular "Lego blocks" approach. Generate production-ready microservices with Clean Architecture, DDD patterns, CQRS, containerization, and comprehensive testing.
 
@@ -71,8 +71,8 @@ microkit --help
 
 ```bash
 # Clone the repository
-git clone https://github.com/suranig/microservice-net8-ddd.git
-cd microservice-net8-ddd
+git clone https://github.com/suranig/MicroserviceKit.git
+cd MicroserviceKit
 
 # Build and run locally
 dotnet build
