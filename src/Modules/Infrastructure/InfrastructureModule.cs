@@ -100,30 +100,33 @@ public class InfrastructureModule : ITemplateModule
 
     private string GenerateProjectFile(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "inmemory";
+        var provider = config.GetDatabaseProvider();
         
         var packages = new List<string>
         {
-            @"<PackageReference Include=""Microsoft.EntityFrameworkCore"" Version=""8.0.0"" />",
-            @"<PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.0"" />",
-            @"<PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.0"" />",
-            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.0"" />"
+            @"<PackageReference Include=""Microsoft.EntityFrameworkCore"" Version=""8.0.16"" />",
+            @"<PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.16"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.2"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />"
         };
 
         // Add provider-specific packages
         switch (provider)
         {
             case "postgresql":
-                packages.Add(@"<PackageReference Include=""Npgsql.EntityFrameworkCore.PostgreSQL"" Version=""8.0.0"" />");
+                packages.Add(@"<PackageReference Include=""Npgsql.EntityFrameworkCore.PostgreSQL"" Version=""8.0.16"" />");
                 break;
             case "sqlserver":
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.SqlServer"" Version=""8.0.0"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.SqlServer"" Version=""8.0.16"" />");
+                break;
+            case "mysql":
+                packages.Add(@"<PackageReference Include=""Pomelo.EntityFrameworkCore.MySql"" Version=""8.0.2"" />");
                 break;
             case "sqlite":
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.Sqlite"" Version=""8.0.0"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.Sqlite"" Version=""8.0.16"" />");
                 break;
             default:
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.InMemory"" Version=""8.0.0"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.InMemory"" Version=""8.0.16"" />");
                 break;
         }
 
@@ -146,6 +149,8 @@ public class InfrastructureModule : ITemplateModule
 
 </Project>";
     }
+
+
 
     private string GenerateDbContext(TemplateConfiguration config)
     {
@@ -365,7 +370,7 @@ public class {aggregate.Name}Configuration : IEntityTypeConfiguration<{aggregate
 
     private string GenerateInfrastructureExtensions(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "inmemory";
+        var provider = config.GetDatabaseProvider();
         var dbContextConfiguration = GenerateDbContextConfiguration(provider);
         
         var aggregates = config.Domain?.Aggregates ?? new List<AggregateConfiguration>();
@@ -417,6 +422,14 @@ public static class ServiceCollectionExtensions
             options.EnableDetailedErrors(false);
         });",
 
+            "mysql" => @"services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            options.UseMySql(configuration.GetConnectionString(""DefaultConnection""), 
+                ServerVersion.AutoDetect(configuration.GetConnectionString(""DefaultConnection"")));
+            options.EnableSensitiveDataLogging(false);
+            options.EnableDetailedErrors(false);
+        });",
+
             "sqlite" => @"services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseSqlite(configuration.GetConnectionString(""DefaultConnection""));
@@ -434,7 +447,7 @@ public static class ServiceCollectionExtensions
 
     private string GenerateDatabaseConfiguration(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "inmemory";
+        var provider = config.GetDatabaseProvider();
         var connectionString = GenerateConnectionString(provider);
 
         return $@"using Microsoft.EntityFrameworkCore;
@@ -471,6 +484,7 @@ public static class DatabaseConfiguration
         {{
             ""postgresql"" => ""{connectionString.postgresql}"",
             ""sqlserver"" => ""{connectionString.sqlserver}"",
+            ""mysql"" => ""{connectionString.mysql}"",
             ""sqlite"" => ""{connectionString.sqlite}"",
             _ => ""Data Source=:memory:""
         }};
@@ -478,11 +492,12 @@ public static class DatabaseConfiguration
 }}";
     }
 
-    private (string postgresql, string sqlserver, string sqlite) GenerateConnectionString(string provider)
+    private (string postgresql, string sqlserver, string mysql, string sqlite) GenerateConnectionString(string provider)
     {
         return (
             postgresql: "Host=localhost;Database={ServiceName}Db;Username=postgres;Password=postgres123",
             sqlserver: "Server=localhost;Database={ServiceName}DB;User Id=sa;Password=SqlServer123!;TrustServerCertificate=true",
+            mysql: "Server=localhost;Database={ServiceName}DB;User=root;Password=mysql123;",
             sqlite: "Data Source={ServiceName}.db"
         );
     }

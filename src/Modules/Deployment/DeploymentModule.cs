@@ -129,9 +129,9 @@ public class DeploymentModule : ITemplateModule
         var deployScriptContent = GenerateDeployScript(config);
         await File.WriteAllTextAsync(Path.Combine(scriptsPath, "deploy.sh"), deployScriptContent);
 
-        // Generate monitoring setup
-        var monitoringContent = GenerateMonitoringSetup(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "monitoring", "prometheus.yml"), monitoringContent);
+        // Skip Prometheus monitoring for now
+        // var monitoringContent = GenerateMonitoringSetup(config);
+        // await File.WriteAllTextAsync(Path.Combine(outputPath, "monitoring", "prometheus.yml"), monitoringContent);
     }
 
     private bool ShouldGenerateKubernetes(TemplateConfiguration config)
@@ -288,7 +288,17 @@ ENTRYPOINT [""dotnet"", ""{config.MicroserviceName}.Api.dll""]";
     private string GenerateDockerCompose(TemplateConfiguration config)
     {
         var dbService = GenerateDockerComposeDatabase(config);
+        var mongoService = GenerateDockerComposeMongoDB(config);
+        var rabbitMQService = GenerateDockerComposeRabbitMQ(config);
         var serviceName = config.MicroserviceName.ToLowerInvariant();
+        
+        var dependsOn = new List<string> { GetDatabaseServiceName(config) };
+        if (config.Features?.Database?.ReadModel?.Provider?.ToLowerInvariant() == "mongodb")
+            dependsOn.Add("mongodb");
+        if (config.Features?.Messaging?.Enabled == true && config.Features?.Messaging?.Provider?.ToLowerInvariant() == "rabbitmq")
+            dependsOn.Add("rabbitmq");
+        
+        var dependsOnString = string.Join("\n      - ", dependsOn);
         
         return $@"version: '3.8'
 
@@ -308,7 +318,7 @@ services:
       - ConnectionStrings__DefaultConnection={GetConnectionString(config)}
       - SERVICE_VERSION=${{VERSION:-1.0.0}}
     depends_on:
-      - {GetDatabaseServiceName(config)}
+      - {dependsOnString}
     networks:
       - {serviceName}-network
     restart: unless-stopped
@@ -320,6 +330,10 @@ services:
       start_period: 60s
 
 {dbService}
+
+{mongoService}
+
+{rabbitMQService}
 
   # Redis for caching (optional)
   redis:
@@ -334,32 +348,18 @@ services:
     volumes:
       - redis-data:/data
 
-  # Prometheus for monitoring
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: {config.MicroserviceName.ToLowerInvariant()}-prometheus
-    ports:
-      - ""9090:9090""
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    networks:
-      - {config.MicroserviceName.ToLowerInvariant()}-network
-    restart: unless-stopped
-
 networks:
   {config.MicroserviceName.ToLowerInvariant()}-network:
     driver: bridge
 
 volumes:
   {GetDatabaseServiceName(config)}-data:
-  redis-data:
-  prometheus-data:";
+  redis-data:";
     }
 
     private string GenerateDockerComposeDatabase(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "postgresql";
+        var provider = config.GetDatabaseProvider();
         
         return provider switch
         {
@@ -409,7 +409,7 @@ volumes:
 
     private string GetDatabaseServiceName(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "postgresql";
+        var provider = config.GetDatabaseProvider();
         return provider switch
         {
             "postgresql" => "postgres",
@@ -420,13 +420,69 @@ volumes:
 
     private string GetConnectionString(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "postgresql";
+        var provider = config.GetDatabaseProvider();
         return provider switch
         {
-            "postgresql" => "Host=postgres;Database={config.MicroserviceName.ToLowerInvariant()}db;Username=postgres;Password=postgres123",
-            "sqlserver" => "Server=sqlserver;Database={config.MicroserviceName}DB;User Id=sa;Password=SqlServer123!;TrustServerCertificate=true",
+            "postgresql" => $"Host=postgres;Database={config.MicroserviceName.ToLowerInvariant()}db;Username=postgres;Password=postgres123",
+            "sqlserver" => $"Server=sqlserver;Database={config.MicroserviceName}DB;User Id=sa;Password=SqlServer123!;TrustServerCertificate=true",
             _ => "Data Source=:memory:"
         };
+    }
+
+    private string GenerateDockerComposeMongoDB(TemplateConfiguration config)
+    {
+        if (config.Features?.Database?.ReadModel?.Provider?.ToLowerInvariant() != "mongodb")
+            return "";
+
+        return $@"  # MongoDB for read models
+  mongodb:
+    image: mongo:7.0
+    container_name: {config.MicroserviceName.ToLowerInvariant()}-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE={config.MicroserviceName.ToLowerInvariant()}_read
+    ports:
+      - ""27017:27017""
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - {config.MicroserviceName.ToLowerInvariant()}-network
+    restart: unless-stopped
+    healthcheck:
+      test: [""CMD"", ""mongosh"", ""--eval"", ""db.adminCommand('ping')""]
+      interval: 10s
+      timeout: 5s
+      retries: 5";
+    }
+
+    private string GenerateDockerComposeRabbitMQ(TemplateConfiguration config)
+    {
+        if (config.Features?.Messaging?.Enabled != true || 
+            config.Features?.Messaging?.Provider?.ToLowerInvariant() != "rabbitmq")
+            return "";
+
+        return $@"  # RabbitMQ for messaging
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: {config.MicroserviceName.ToLowerInvariant()}-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+      - RABBITMQ_DEFAULT_VHOST=/
+    ports:
+      - ""5672:5672""
+      - ""15672:15672""
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - {config.MicroserviceName.ToLowerInvariant()}-network
+    restart: unless-stopped
+    healthcheck:
+      test: [""CMD"", ""rabbitmq-diagnostics"", ""ping""]
+      interval: 10s
+      timeout: 5s
+      retries: 5";
     }
 
     private string GenerateDockerComposeOverride(TemplateConfiguration config)
@@ -1337,7 +1393,7 @@ metrics: ## Show metrics endpoint
 
     private string GenerateEnvExample(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "postgresql";
+        var provider = config.GetDatabaseProvider();
         
         var connectionString = provider switch
         {

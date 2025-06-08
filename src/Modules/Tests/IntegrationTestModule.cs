@@ -971,7 +971,7 @@ public static class HttpClientExtensions
 
     private string GenerateTestContainersSetup(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider?.ToLowerInvariant() ?? "inmemory";
+        var provider = config.GetDatabaseProvider();
         
         return $@"using Testcontainers.PostgreSql;
 using Testcontainers.MsSql;

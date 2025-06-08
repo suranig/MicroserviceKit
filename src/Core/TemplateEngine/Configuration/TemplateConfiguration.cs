@@ -10,6 +10,43 @@ public class TemplateConfiguration
     public FeaturesConfiguration? Features { get; set; }
     public DomainConfiguration? Domain { get; set; }
     public ProjectStructureConfiguration? ProjectStructure { get; set; }
+    
+    // Helper methods for simple access
+    public string GetDatabaseProvider()
+    {
+        // Nowa struktura Database (enterprise)
+        if (Features?.Database?.WriteModel?.Provider != null)
+        {
+            return Features.Database.WriteModel.Provider.ToLowerInvariant();
+        }
+        
+        // Stara struktura Persistence (standard)
+        if (Features?.Persistence?.Provider != null)
+        {
+            return Features.Persistence.Provider.ToLowerInvariant();
+        }
+        
+        return "inmemory";
+    }
+    
+    public string GetReadModelProvider()
+    {
+        // Nowa struktura Database (enterprise)
+        if (Features?.Database?.ReadModel?.Provider != null)
+        {
+            var provider = Features.Database.ReadModel.Provider;
+            return provider == "same" ? GetDatabaseProvider() : provider.ToLowerInvariant();
+        }
+        
+        // Stara struktura Persistence (standard)
+        if (Features?.Persistence?.ReadModel != null)
+        {
+            var readModel = Features.Persistence.ReadModel;
+            return readModel == "same" ? GetDatabaseProvider() : readModel.ToLowerInvariant();
+        }
+        
+        return GetDatabaseProvider();
+    }
 }
 
 public class ProjectStructureConfiguration

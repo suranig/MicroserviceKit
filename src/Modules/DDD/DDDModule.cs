@@ -90,7 +90,7 @@ public class DDDModule : ITemplateModule
         var createdEventContent = createdEventTemplate
             .Replace("{{Namespace}}", context.Configuration.Namespace)
             .Replace("{{EventName}}", $"{aggregate.Name}CreatedEvent")
-            .Replace("{{Parameters}}", $"Guid {aggregate.Name}Id, {GenerateEventParameters(aggregate.Properties)}");
+            .Replace("{{Parameters}}", $"Guid aggregateId");
 
         var domainPath = context.GetDomainProjectPath();
         await context.WriteFileAsync($"{domainPath}/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
@@ -125,7 +125,7 @@ public class DDDModule : ITemplateModule
     {{
         {assignments}
         
-        AddDomainEvent(new {aggregate.Name}CreatedEvent(Id{(aggregate.Properties.Any() ? ", " + string.Join(", ", aggregate.Properties.Select(p => p.Name)) : "")}));
+        AddDomainEvent(new {aggregate.Name}CreatedEvent(Id));
     }}";
     }
 
@@ -184,9 +184,11 @@ namespace {{Namespace}}.Domain.Events;
 
 public class {{EventName}} : DomainEventBase
 {
+    public Guid AggregateId { get; }
+    
     public {{EventName}}({{Parameters}})
     {
-        // Initialize properties from parameters
+        AggregateId = aggregateId;
     }
 }";
     }

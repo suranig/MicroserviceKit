@@ -22,7 +22,7 @@ var customerId = Guid.NewGuid();
         // Assert
         entity.Should().NotBeNull();
         entity.Id.Should().NotBeEmpty();
-        entity.CustomerId.Should().Be(Guid.NewGuid());
+        entity.CustomerId.Should().Be(customerId);
         entity.TotalAmount.Should().Be(123.45m);
         entity.Status.Should().Be("Test Value");
     }

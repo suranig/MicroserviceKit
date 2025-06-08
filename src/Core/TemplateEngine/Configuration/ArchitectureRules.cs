@@ -114,14 +114,14 @@ public static class ArchitectureRules
     
     private static PersistenceStrategy DeterminePersistence(TemplateConfiguration config)
     {
-        var provider = config.Features?.Persistence?.Provider ?? "inmemory";
-        var readModel = config.Features?.Persistence?.ReadModel ?? "same";
+        var writeProvider = config.GetDatabaseProvider();
+        var readProvider = config.GetReadModelProvider();
         
         return new PersistenceStrategy
         {
-            WriteProvider = provider,
-            ReadProvider = readModel == "same" ? provider : readModel,
-            SeparateReadModel = readModel != "same"
+            WriteProvider = writeProvider,
+            ReadProvider = readProvider,
+            SeparateReadModel = readProvider != writeProvider
         };
     }
     
@@ -144,7 +144,7 @@ public static class ArchitectureRules
         var hasCaching = config.Features?.Database?.Cache?.Enabled == true;
         var hasSeparateReadModel = config.Features?.Database?.ReadModel?.Provider != "same";
         var hasComplexPersistence = config.Features?.Database?.EventStore?.Enabled == true;
-        var hasDatabase = config.Features?.Persistence?.Provider != "inmemory";
+        var hasDatabase = config.GetDatabaseProvider() != "inmemory";
         
         return level switch
         {
