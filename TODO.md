@@ -58,10 +58,8 @@
 - [ ] **Add configuration validation** with helpful error messages
 
 ### Monitoring & Observability
-- [ ] **Add distributed tracing** (OpenTelemetry)
 - [ ] **Add structured logging** with Serilog
 - [ ] **Add application insights** integration
-- [ ] **Add custom dashboards** for Grafana
 
 ## 🔵 **LOW PRIORITY - Future Enhancements**
 

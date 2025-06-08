@@ -1,0 +1,181 @@
+{
+  "microserviceName": "OrderService",
+  "namespace": "ECommerce.OrderService",
+  "outputPath": "./generated",
+  
+  "architecture": {
+    "level": "enterprise",
+    "patterns": {
+      "ddd": "enabled",
+      "cqrs": "enabled",
+      "eventSourcing": "disabled"
+    }
+  },
+
+  "features": {
+    "api": {
+      "style": "controllers",
+      "authentication": "jwt",
+      "documentation": "swagger"
+    },
+    
+    "persistence": {
+      "provider": "postgresql",
+      "migrations": "enabled",
+      "readModel": "separate"
+    },
+    
+    "database": {
+      "writeModel": {
+        "provider": "postgresql",
+        "connectionString": "env:WRITE_DB_CONNECTION",
+        "enableMigrations": true,
+        "enableAuditing": true,
+        "enableSoftDelete": false
+      },
+      "readModel": {
+        "provider": "mongodb",
+        "connectionString": "env:READ_DB_CONNECTION",
+        "enableProjections": true,
+        "syncStrategy": "eventual"
+      },
+      "cache": {
+        "enabled": true,
+        "provider": "redis",
+        "connectionString": "env:REDIS_CONNECTION",
+        "defaultTtlMinutes": 30,
+        "cachedQueries": ["GetOrderById", "GetOrdersByCustomer"]
+      }
+    },
+    
+    "messaging": {
+      "enabled": true,
+      "provider": "rabbitmq",
+      "patterns": ["outbox", "events"]
+    },
+    
+    "externalServices": {
+      "enabled": true,
+      "services": [
+        {
+          "name": "PaymentGateway",
+          "baseUrl": "env:PAYMENT_GATEWAY_URL",
+          "type": "http",
+          "authentication": {
+            "type": "bearer",
+            "settings": {
+              "tokenSource": "env:PAYMENT_GATEWAY_SECRET"
+            }
+          },
+          "operations": ["ProcessPayment", "RefundPayment", "GetPaymentStatus"]
+        },
+        {
+          "name": "NotificationService",
+          "baseUrl": "env:NOTIFICATION_SERVICE_URL",
+          "type": "http",
+          "authentication": {
+            "type": "apikey",
+            "settings": {
+              "headerName": "X-API-Key",
+              "keySource": "env:NOTIFICATION_API_KEY"
+            }
+          },
+          "operations": ["SendOrderConfirmation", "SendOrderCancellation"]
+        },
+        {
+          "name": "InventoryService",
+          "baseUrl": "env:INVENTORY_SERVICE_URL",
+          "type": "http",
+          "operations": ["ReserveItems", "ReleaseItems", "CheckAvailability"]
+        }
+      ],
+      "resilience": {
+        "retry": {
+          "enabled": true,
+          "maxAttempts": 3,
+          "strategy": "exponential",
+          "baseDelayMs": 1000
+        },
+        "circuitBreaker": {
+          "enabled": true,
+          "failureThreshold": 5,
+          "timeoutMs": 30000,
+          "recoveryTimeMs": 60000
+        },
+        "timeout": {
+          "enabled": true,
+          "defaultTimeoutMs": 30000
+        },
+        "bulkhead": {
+          "enabled": true,
+          "maxConcurrency": 10,
+          "queueCapacity": 100
+        }
+      }
+    },
+    
+    "observability": {
+      "logging": "serilog",
+      "metrics": "auto",
+      "tracing": "disabled"
+    },
+    
+    "deployment": {
+      "docker": "enabled",
+      "kubernetes": "enabled",
+      "healthChecks": "enabled"
+    },
+    
+    "testing": {
+      "level": "enterprise",
+      "framework": "xunit",
+      "mockingEnabled": true,
+      "testContainersEnabled": true
+    }
+  },
+
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Order",
+        "properties": [
+          { "name": "CustomerId", "type": "Guid", "isRequired": true },
+          { "name": "OrderNumber", "type": "string", "isRequired": true },
+          { "name": "TotalAmount", "type": "decimal", "isRequired": true },
+          { "name": "Status", "type": "OrderStatus", "isRequired": true },
+          { "name": "OrderDate", "type": "DateTime", "isRequired": true }
+        ],
+        "operations": ["Create", "AddItem", "RemoveItem", "Confirm", "Cancel", "Complete"]
+      },
+      {
+        "name": "OrderItem",
+        "properties": [
+          { "name": "ProductId", "type": "Guid", "isRequired": true },
+          { "name": "ProductName", "type": "string", "isRequired": true },
+          { "name": "Quantity", "type": "int", "isRequired": true },
+          { "name": "UnitPrice", "type": "decimal", "isRequired": true },
+          { "name": "TotalPrice", "type": "decimal", "isRequired": true }
+        ],
+        "operations": ["Create", "UpdateQuantity", "UpdatePrice"]
+      }
+    ],
+    "valueObjects": [
+      {
+        "name": "Money",
+        "properties": [
+          { "name": "Amount", "type": "decimal", "isRequired": true },
+          { "name": "Currency", "type": "string", "isRequired": true }
+        ]
+      },
+      {
+        "name": "Address",
+        "properties": [
+          { "name": "Street", "type": "string", "isRequired": true },
+          { "name": "City", "type": "string", "isRequired": true },
+          { "name": "PostalCode", "type": "string", "isRequired": true },
+          { "name": "Country", "type": "string", "isRequired": true }
+        ]
+      }
+    ]
+  }
+} 

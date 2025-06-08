@@ -96,6 +96,11 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
         Namespace = PromptWithDefault($"Namespace", $"Company.{name}")
     };
     
+    // Architecture Level
+    Console.WriteLine("\n🏗️ Architecture Configuration:");
+    var level = PromptChoice("Architecture level", new[] { "minimal", "standard", "enterprise" }, "standard");
+    config.Architecture = new ArchitectureConfiguration { Level = level };
+    
     // DDD Configuration
     Console.WriteLine("\n📦 Domain-Driven Design Configuration:");
     var enableDDD = PromptYesNo("Enable DDD patterns?", true);
@@ -135,15 +140,178 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
     
     // API Configuration
     Console.WriteLine("\n🌐 API Configuration:");
-    var apiStyle = PromptChoice("API style", new[] { "minimal", "controllers", "both" }, "minimal");
+    var apiStyle = PromptChoice("API style", new[] { "minimal", "controllers", "both" }, "controllers");
+    var authType = PromptChoice("Authentication", new[] { "none", "jwt", "oauth" }, "none");
+    
     config.Features ??= new FeaturesConfiguration();
     config.Features.Api ??= new ApiConfiguration();
     config.Features.Api.Style = apiStyle;
+    config.Features.Api.Authentication = authType;
     
-    // Persistence
-    Console.WriteLine("\n💾 Persistence Configuration:");
-    config.Features.Persistence ??= new PersistenceConfiguration();
-    config.Features.Persistence.Provider = PromptChoice("Persistence provider", new[] { "inmemory", "sqlite", "postgresql", "sqlserver" }, "inmemory");
+    // Database Configuration
+    Console.WriteLine("\n💾 Database Configuration:");
+    var enableDatabase = PromptYesNo("Configure database?", true);
+    
+    if (enableDatabase)
+    {
+        config.Features.Database ??= new DatabaseConfiguration();
+        
+        // Write Model (Primary Database)
+        Console.WriteLine("\n📝 Write Model Database:");
+        var writeProvider = PromptChoice("Write database provider", 
+            new[] { "postgresql", "mysql", "sqlserver", "sqlite" }, "postgresql");
+        
+        config.Features.Database.WriteModel = new WriteModelConfiguration
+        {
+            Provider = writeProvider,
+            EnableMigrations = PromptYesNo("Enable migrations?", true),
+            EnableAuditing = PromptYesNo("Enable auditing?", false),
+            EnableSoftDelete = PromptYesNo("Enable soft delete?", false)
+        };
+        
+        // Read Model Configuration
+        Console.WriteLine("\n📖 Read Model Configuration:");
+        var enableReadModel = PromptYesNo("Use separate read model?", false);
+        
+        if (enableReadModel)
+        {
+            var readProvider = PromptChoice("Read model provider", 
+                new[] { "mongodb", "elasticsearch", "same" }, "mongodb");
+            
+            config.Features.Database.ReadModel = new ReadModelConfiguration
+            {
+                Provider = readProvider,
+                EnableProjections = PromptYesNo("Enable projections?", true),
+                SyncStrategy = PromptChoice("Sync strategy", 
+                    new[] { "eventual", "immediate", "batch" }, "eventual")
+            };
+        }
+        
+        // Cache Configuration
+        Console.WriteLine("\n🗄️ Cache Configuration:");
+        var enableCache = PromptYesNo("Enable caching?", false);
+        
+        if (enableCache)
+        {
+            var cacheProvider = PromptChoice("Cache provider", 
+                new[] { "redis", "inmemory", "distributed" }, "redis");
+            
+            config.Features.Database.Cache = new CacheConfiguration
+            {
+                Enabled = true,
+                Provider = cacheProvider,
+                DefaultTtlMinutes = int.Parse(PromptWithDefault("Default TTL (minutes)", "60"))
+            };
+        }
+    }
+    
+    // Messaging Configuration
+    Console.WriteLine("\n📨 Messaging Configuration:");
+    var enableMessaging = PromptYesNo("Enable messaging (events)?", false);
+    
+    if (enableMessaging)
+    {
+        var messagingProvider = PromptChoice("Messaging provider", 
+            new[] { "rabbitmq", "servicebus", "inmemory" }, "rabbitmq");
+        
+        config.Features.Messaging = new MessagingConfiguration
+        {
+            Enabled = true,
+            Provider = messagingProvider,
+            Patterns = new List<string>()
+        };
+        
+        if (PromptYesNo("Enable outbox pattern?", true))
+            config.Features.Messaging.Patterns.Add("outbox");
+        
+        if (PromptYesNo("Enable domain events?", true))
+            config.Features.Messaging.Patterns.Add("events");
+        
+        if (PromptYesNo("Enable saga pattern?", false))
+            config.Features.Messaging.Patterns.Add("saga");
+    }
+    
+    // External Services Configuration
+    Console.WriteLine("\n🔗 External Services Configuration:");
+    var enableExternalServices = PromptYesNo("Configure external services?", false);
+    
+    if (enableExternalServices)
+    {
+        config.Features.ExternalServices = new ExternalServicesConfiguration
+        {
+            Enabled = true,
+            Services = new List<ExternalServiceConfiguration>(),
+            Resilience = new ResilienceConfiguration()
+        };
+        
+        Console.WriteLine("\nDefine external services (press Enter with empty name to finish):");
+        while (true)
+        {
+            var serviceName = Prompt("Service name");
+            if (string.IsNullOrEmpty(serviceName)) break;
+            
+            var baseUrl = Prompt($"Base URL for {serviceName}");
+            var serviceType = PromptChoice("Service type", 
+                new[] { "http", "grpc", "graphql" }, "http");
+            
+            var externalService = new ExternalServiceConfiguration
+            {
+                Name = serviceName,
+                BaseUrl = baseUrl,
+                Type = serviceType,
+                Operations = new List<string>()
+            };
+            
+            Console.WriteLine($"Operations for {serviceName} (press Enter to finish):");
+            while (true)
+            {
+                var operation = Prompt("Operation name");
+                if (string.IsNullOrEmpty(operation)) break;
+                externalService.Operations.Add(operation);
+            }
+            
+            config.Features.ExternalServices.Services.Add(externalService);
+        }
+        
+        // Resilience Configuration
+        Console.WriteLine("\n🛡️ Resilience Configuration:");
+        config.Features.ExternalServices.Resilience.Retry.Enabled = PromptYesNo("Enable retry policy?", true);
+        if (config.Features.ExternalServices.Resilience.Retry.Enabled)
+        {
+            config.Features.ExternalServices.Resilience.Retry.MaxAttempts = 
+                int.Parse(PromptWithDefault("Max retry attempts", "3"));
+        }
+        
+        config.Features.ExternalServices.Resilience.CircuitBreaker.Enabled = 
+            PromptYesNo("Enable circuit breaker?", true);
+        
+        config.Features.ExternalServices.Resilience.Timeout.Enabled = 
+            PromptYesNo("Enable timeout policy?", true);
+    }
+    
+    // Testing Configuration
+    Console.WriteLine("\n🧪 Testing Configuration:");
+    var testLevel = PromptChoice("Testing level", 
+        new[] { "unit", "integration", "full", "enterprise" }, "integration");
+    
+    config.Features.Testing = new TestingConfiguration
+    {
+        Level = testLevel,
+        MockingEnabled = PromptYesNo("Enable mocking?", true),
+        TestContainersEnabled = PromptYesNo("Enable TestContainers?", testLevel == "integration" || testLevel == "full")
+    };
+    
+    // Deployment Configuration
+    Console.WriteLine("\n🚀 Deployment Configuration:");
+    var enableDocker = PromptYesNo("Generate Docker configuration?", true);
+    var enableKubernetes = PromptYesNo("Generate Kubernetes configuration?", false);
+    
+    config.Features.Deployment = new DeploymentConfiguration
+    {
+        Docker = enableDocker ? "enabled" : "disabled",
+        Kubernetes = enableKubernetes ? "enabled" : "disabled",
+        HealthChecks = "auto"
+    };
     
     return config;
 }

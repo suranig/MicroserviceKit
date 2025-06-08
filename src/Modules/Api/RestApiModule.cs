@@ -281,8 +281,9 @@ using Wolverine;
 namespace {config.Namespace}.Api.Controllers;
 
 [ApiController]
-[Route(""api/[controller]"")]
+[Route(""api/rest/{aggregateLower}"")]
 [Produces(""application/json"")]
+[Tags(""{aggregate.Name} Management"")]
 public class {controllerName} : ControllerBase
 {{
     private readonly IMessageBus _messageBus;

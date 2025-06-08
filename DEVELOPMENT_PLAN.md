@@ -31,12 +31,12 @@
 **Priorytet: WYSOKI**
 
 #### 1.1 REST API Module
-- [ ] **REST Controllers Generator**
-  - [ ] CRUD endpoints (GET,COUNT, POST, PUT, DELETE)
-  - [ ] Paging, filtering, sorting
-  - [ ] Response DTOs mapping
-  - [ ] HTTP status codes handling
-  - [ ] OpenAPI/Swagger documentation
+- [x] **REST Controllers Generator z ASP.NesT**
+  - [x] CRUD endpoints (GET,COUNT, POST, PUT, DELETE)
+  - [x] Paging, filtering, sorting
+  - [x] Response DTOs mapping
+  - [x] HTTP status codes handling
+  - [x] OpenAPI/Swagger documentation
 
 - [ ] **Minimal API Generator** 
   - [ ] Endpoint mapping z IMessageBus
@@ -243,10 +243,16 @@ src/Modules/
 2. [x] **TestModule - Unit Tests** ✅ UKOŃCZONE (2-3 dni)
 3. [x] **Integracja modułów w CLI** ✅ UKOŃCZONE (1 dzień)
 
-### 🚀 **KRÓTKOTERMINOWE (Następny Sprint)**
-1. [ ] **Napraw ApplicationModule** - żeby faktycznie generował pliki (1 dzień)
-2. [ ] **Stwórz InfrastructureModule** - repositories, DbContext, extensions (2 dni)
-3. [ ] **TestModule - Integration Tests** (2 dni)
+### 🚀 **KRÓTKOTERMINOWE (Następny Sprint) - AKTUALNY PRIORYTET**
+1. [ ] **🚨 KRYTYCZNY: Stwórz InfrastructureModule** - repositories, DbContext, extensions (2-3 dni)
+   - [ ] Stwórz `src/Modules/Infrastructure/InfrastructureModule.cs`
+   - [ ] Implementuj generowanie Entity Framework DbContext
+   - [ ] Implementuj generowanie Repository pattern
+   - [ ] Implementuj konfigurację bazy danych (PostgreSQL, SQL Server, SQLite)
+   - [ ] Implementuj dependency injection extensions
+   - [ ] Dodaj do CLI registration
+2. [ ] **Napraw referencje projektów** - API projekty referencują nieistniejący Infrastructure (1 dzień)
+3. [ ] **Test kompilacji** - sprawdź czy wygenerowane mikrousługi się kompilują (0.5 dnia)
 4. [ ] **MessagingModule** - RabbitMQ integration (jeśli eventy) (1 dzień)
 
 ### 🐳 **CONTAINERIZATION (Sprint 3)**
@@ -406,241 +412,6 @@ tests/
 - [ ] Performance tests
 - [ ] Security review
 - [ ] NuGet package ready
-
----
-
-## 🐳 **SZCZEGÓŁY KONTENERYZACJI**
-
-### Docker Files - Inteligentne Generowanie
-
-#### **microservice.Dockerfile** (zawsze generowany)
-```dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
-
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ["src/Api/{ServiceName}.Api/{ServiceName}.Api.csproj", "src/Api/{ServiceName}.Api/"]
-COPY ["src/Application/{ServiceName}.Application/{ServiceName}.Application.csproj", "src/Application/{ServiceName}.Application/"]
-COPY ["src/Domain/{ServiceName}.Domain/{ServiceName}.Domain.csproj", "src/Domain/{ServiceName}.Domain/"]
-COPY ["src/Infrastructure/{ServiceName}.Infrastructure/{ServiceName}.Infrastructure.csproj", "src/Infrastructure/{ServiceName}.Infrastructure/"]
-RUN dotnet restore "src/Api/{ServiceName}.Api/{ServiceName}.Api.csproj"
-COPY . .
-WORKDIR "/src/src/Api/{ServiceName}.Api"
-RUN dotnet build "{ServiceName}.Api.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "{ServiceName}.Api.csproj" -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
-ENTRYPOINT ["dotnet", "{ServiceName}.Api.dll"]
-```
-
-#### **docker-compose.yml** (inteligentne komponenty)
-```yaml
-version: '3.8'
-
-services:
-  {servicename}:
-    build:
-      context: .
-      dockerfile: microservice.Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database={ServiceName}Db;Username=postgres;Password=postgres
-    depends_on:
-      - postgres
-    networks:
-      - {servicename}-network
-
-  # Generowane TYLKO jeśli config.Features.Persistence.WriteModel == "postgresql"
-  postgres:
-    build:
-      context: ./docker
-      dockerfile: postgres.Dockerfile
-    environment:
-      POSTGRES_DB: {ServiceName}Db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - {servicename}-network
-
-  # Generowane TYLKO jeśli config.Features.Persistence.ReadModel == "mongodb"
-  mongodb:
-    build:
-      context: ./docker
-      dockerfile: mongodb.Dockerfile
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-      MONGO_INITDB_DATABASE: {ServiceName}ReadDb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - {servicename}-network
-
-  # Generowane TYLKO jeśli config.Features.Messaging.Enabled == true
-  rabbitmq:
-    build:
-      context: ./docker
-      dockerfile: rabbitmq.Dockerfile
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - {servicename}-network
-
-volumes:
-  postgres_data:
-  mongodb_data:
-  rabbitmq_data:
-
-networks:
-  {servicename}-network:
-    driver: bridge
-```
-
-### Kubernetes Manifests - TYLKO Mikrousługa
-
-#### **deployment.yaml**
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {servicename}-deployment
-  labels:
-    app: {servicename}
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: {servicename}
-  template:
-    metadata:
-      labels:
-        app: {servicename}
-    spec:
-      containers:
-      - name: {servicename}
-        image: {servicename}:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: ASPNETCORE_ENVIRONMENT
-          value: "Production"
-        - name: ConnectionStrings__DefaultConnection
-          valueFrom:
-            secretKeyRef:
-              name: {servicename}-secrets
-              key: connection-string
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
-```
-
-#### **hpa.yaml**
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: {servicename}-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: {servicename}-deployment
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
-```
-
-### Logika Generowania
-
-```csharp
-public class DockerModule : ITemplateModule
-{
-    public async Task GenerateAsync(GenerationContext context)
-    {
-        var config = context.Configuration;
-        
-        // Zawsze generuj mikrousługę
-        await GenerateMicroserviceDockerfile(context);
-        
-        // Inteligentnie generuj infrastrukturę
-        var services = new List<string> { "microservice" };
-        
-        if (config.Features?.Messaging?.Enabled == true)
-        {
-            await GenerateRabbitMQDockerfile(context);
-            services.Add("rabbitmq");
-        }
-        
-        if (config.Features?.Persistence?.WriteModel == "postgresql")
-        {
-            await GeneratePostgreSQLDockerfile(context);
-            services.Add("postgres");
-        }
-        
-        if (config.Features?.Persistence?.ReadModel == "mongodb")
-        {
-            await GenerateMongoDBDockerfile(context);
-            services.Add("mongodb");
-        }
-        
-        // Generuj docker-compose z wybranymi serwisami
-        await GenerateDockerCompose(context, services);
-    }
-}
-```
-
----
 
 ---
 
