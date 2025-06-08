@@ -11,8 +11,8 @@ public class ApplicationModule : ITemplateModule
 
     public bool IsEnabled(TemplateConfiguration config)
     {
-        return config.Architecture?.Level != "minimal" || 
-               (config.Domain?.Aggregates?.Count ?? 0) > 1;
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        return decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal;
     }
 
     public async Task GenerateAsync(GenerationContext context)
