@@ -332,12 +332,6 @@ dotnet run --project src/CLI/MicroserviceGenerator.CLI -- --help
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🤝 Support
-
-- 📧 Email: support@microservice-generator.com
-- 💬 Discussions: [GitHub Discussions](https://github.com/your-repo/microservice-net8-ddd/discussions)
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/microservice-net8-ddd/issues)
-
 ---
 
 **Made with ❤️ for .NET developers who want to build better microservices faster.** 
