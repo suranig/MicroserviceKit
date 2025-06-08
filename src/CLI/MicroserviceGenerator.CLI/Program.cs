@@ -204,6 +204,7 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
     {
         new DDDModule(),
         new Microservice.Modules.Application.ApplicationModule(),
+        new Microservice.Modules.Infrastructure.InfrastructureModule(),
         new Microservice.Modules.Api.RestApiModule(),
         new Microservice.Modules.Tests.UnitTestModule(),
         new Microservice.Modules.Tests.IntegrationTestModule(),
