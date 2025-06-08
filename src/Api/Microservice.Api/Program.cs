@@ -1,8 +1,8 @@
-using MediatR;
 using Microservice.Application.Extensions;
 using Microservice.Application.Todo.Commands.CreateTodo;
 using Microservice.Application.Todo.Queries.GetTodos;
 using Microservice.Infrastructure.Extensions;
+using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +12,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
+// Add Wolverine
+builder.Host.UseWolverine();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -20,15 +23,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/todos", async (string title, IMediator mediator, CancellationToken ct) =>
+app.MapPost("/todos", async (string title, IMessageBus messageBus, CancellationToken ct) =>
 {
-    var id = await mediator.Send(new CreateTodoCommand(title), ct);
+    var id = await messageBus.InvokeAsync<Guid>(new CreateTodoCommand(title), ct);
     return Results.Created($"/todos/{id}", new { Id = id });
 });
 
-app.MapGet("/todos", async (IMediator mediator, CancellationToken ct) =>
+app.MapGet("/todos", async (IMessageBus messageBus, CancellationToken ct) =>
 {
-    var items = await mediator.Send(new GetTodosQuery(), ct);
+    var items = await messageBus.InvokeAsync<IReadOnlyList<Microservice.Domain.Entities.TodoItem>>(new GetTodosQuery(), ct);
     return Results.Ok(items);
 });
 

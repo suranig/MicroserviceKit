@@ -1,10 +1,9 @@
-using MediatR;
 using Microservice.Domain.Entities;
 using Microservice.Domain.Interfaces;
 
 namespace Microservice.Application.Todo.Queries.GetTodos;
 
-public class GetTodosQueryHandler : IRequestHandler<GetTodosQuery, IReadOnlyList<TodoItem>>
+public class GetTodosQueryHandler
 {
     private readonly ITodoRepository _repository;
 
@@ -13,7 +12,7 @@ public class GetTodosQueryHandler : IRequestHandler<GetTodosQuery, IReadOnlyList
         _repository = repository;
     }
 
-    public Task<IReadOnlyList<TodoItem>> Handle(GetTodosQuery request, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<TodoItem>> Handle(GetTodosQuery query, CancellationToken cancellationToken)
     {
         return _repository.GetAllAsync(cancellationToken);
     }

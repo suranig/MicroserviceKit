@@ -1,10 +1,9 @@
-using MediatR;
 using Microservice.Domain.Entities;
 using Microservice.Domain.Interfaces;
 
 namespace Microservice.Application.Todo.Commands.CreateTodo;
 
-public class CreateTodoCommandHandler : IRequestHandler<CreateTodoCommand, Guid>
+public class CreateTodoCommandHandler
 {
     private readonly ITodoRepository _repository;
 
@@ -13,9 +12,9 @@ public class CreateTodoCommandHandler : IRequestHandler<CreateTodoCommand, Guid>
         _repository = repository;
     }
 
-    public async Task<Guid> Handle(CreateTodoCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateTodoCommand command, CancellationToken cancellationToken)
     {
-        var item = new TodoItem(request.Title);
+        var item = new TodoItem(command.Title);
         await _repository.AddAsync(item, cancellationToken);
         return item.Id;
     }
