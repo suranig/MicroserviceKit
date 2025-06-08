@@ -374,6 +374,9 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
         new Microservice.Modules.Application.ApplicationModule(),
         new Microservice.Modules.Infrastructure.InfrastructureModule(),
         new Microservice.Modules.Api.RestApiModule(),
+        new Microservice.Modules.ExternalServices.ExternalServicesModule(),
+        new Microservice.Modules.Messaging.MessagingModule(),
+        new Microservice.Modules.ReadModels.ReadModelsModule(),
         new Microservice.Modules.Tests.UnitTestModule(),
         new Microservice.Modules.Tests.IntegrationTestModule(),
         new Microservice.Modules.Deployment.DeploymentModule()
