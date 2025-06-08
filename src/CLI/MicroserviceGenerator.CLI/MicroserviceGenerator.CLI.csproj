@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>microkit</ToolCommandName>
+    <PackageId>MicroserviceKit</PackageId>
+    <Version>0.1.0-beta</Version>
+    <Authors>Paweł Pilichowski</Authors>
+    <Description>🚀 Complete toolkit for generating .NET 8 microservices with DDD, CQRS, and Clean Architecture. Generate production-ready microservices with Domain Layer, REST APIs, Unit Tests, and more. BETA VERSION - Core functionality working, advanced features in development.</Description>
+    <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;unit-tests;beta;microkit</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/suranig/microservice-net8-ddd</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/suranig/microservice-net8-ddd</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>
+🎉 BETA Release 0.1.0
+✅ Core functionality working:
+- Domain Layer generation with AggregateKit
+- REST API Controllers with full CRUD
+- Comprehensive Unit Testing
+- CLI with interactive mode
+- Smart architecture selection
+
+🚧 In Development:
+- Application Layer (Commands/Queries/Handlers)
+- Infrastructure Layer (Repositories/DbContext)
+- Docker &amp; Kubernetes support
+- Integration Tests
+
+⚠️ This is a BETA version. Core features work but some modules are still in development.
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TemplateEngine\TemplateEngine.csproj" />
+    <ProjectReference Include="..\..\Modules\DDD\DDD.csproj" />
+    <ProjectReference Include="..\..\Modules\Application\Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Api\Api.csproj" />
+    <ProjectReference Include="..\..\Modules\Tests\Tests.csproj" />
+  </ItemGroup>
+
+</Project> 

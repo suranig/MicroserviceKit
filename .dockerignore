@@ -1,0 +1,36 @@
+# Migration history files (not needed in containers)
+.microservice-history.json
+.microservice-*.json
+
+# Development files
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+.DS_Store
+
+# Build outputs
+bin/
+obj/
+out/
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# NuGet packages
+packages/
+*.nupkg
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Examples
+examples/ 

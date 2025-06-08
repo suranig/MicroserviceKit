@@ -1,0 +1,31 @@
+{
+  "microserviceName": "UserService",
+  "namespace": "MyApp.UserService",
+  "architecture": {
+    "level": "minimal"
+  },
+  "domain": {
+    "aggregates": [
+      {
+        "name": "User",
+        "properties": [
+          { "name": "Email", "type": "string" },
+          { "name": "Name", "type": "string" }
+        ],
+        "operations": ["Create", "UpdateEmail"]
+      }
+    ]
+  }
+}
+
+// Wygeneruje:
+// UserService/
+// ├── UserService.sln  
+// ├── src/UserService/
+// │   ├── Domain/User.cs
+// │   ├── Application/CreateUser.cs
+// │   ├── Application/UpdateUserEmail.cs
+// │   ├── Endpoints/UserEndpoints.cs
+// │   ├── Program.cs
+// │   └── UserService.csproj
+// └── tests/UserService.Tests/ 
