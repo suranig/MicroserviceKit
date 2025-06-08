@@ -1,4 +1,10 @@
-# 🚀 .NET 8 Microservice Template Generator
+# 🚀 MicroserviceKit - .NET 8 Microservice Template Generator
+
+[![NuGet Version](https://img.shields.io/nuget/v/MicroserviceKit?style=flat-square&logo=nuget&color=blue)](https://www.nuget.org/packages/MicroserviceKit/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/MicroserviceKit?style=flat-square&logo=nuget&color=green)](https://www.nuget.org/packages/MicroserviceKit/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/badge/GitHub-MicroserviceKit-black?style=flat-square&logo=github)](https://github.com/suranig/microservice-net8-ddd)
 
 A powerful, configurable template generator for .NET 8 microservices with a modular "Lego blocks" approach. Generate production-ready microservices with Clean Architecture, DDD patterns, CQRS, containerization, and comprehensive testing.
 
@@ -35,32 +41,42 @@ A powerful, configurable template generator for .NET 8 microservices with a modu
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-repo/microservice-net8-ddd.git
-cd microservice-net8-ddd
+# Install globally from NuGet
+dotnet tool install --global MicroserviceKit --prerelease
 
-# Build the CLI tool
-dotnet build src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj
-
-# Install globally (optional)
-dotnet pack src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj
-dotnet tool install -g MicroserviceGenerator.CLI
+# Or install specific version
+dotnet tool install --global MicroserviceKit --version 0.1.0-beta
 ```
 
 ### Generate Your First Microservice
 
 ```bash
 # Interactive mode - guided setup
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService --interactive
+microkit new OrderService --interactive
 
 # Quick start with defaults
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService
+microkit new OrderService
 
 # From configuration file
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService --config examples/enterprise-service.json
+microkit new OrderService --config examples/enterprise-service.json
 
 # Custom output directory
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService --output ./my-services/
+microkit new OrderService --output ./my-services/
+
+# Show help
+microkit --help
+```
+
+### Alternative: Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/suranig/microservice-net8-ddd.git
+cd microservice-net8-ddd
+
+# Build and run locally
+dotnet build
+dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService
 ```
 
 ## 📋 Configuration
@@ -234,16 +250,16 @@ kubectl get hpa
 
 ```bash
 # Analyze current project
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- migrate --analyze
+microkit migrate --analyze
 
 # Preview migration to standard level
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- migrate --level standard --dry-run
+microkit migrate --level standard --dry-run
 
 # Execute migration
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- migrate --level standard
+microkit migrate --level standard
 
 # View migration history
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- history
+microkit history
 ```
 
 ### Smart Auto-Configuration
@@ -260,17 +276,17 @@ The generator automatically enables features based on complexity:
 
 ### Simple CRUD Service
 ```bash
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new ProductCatalog --config examples/minimal-crud.json
+microkit new ProductCatalog --config examples/minimal-crud.json
 ```
 
 ### Event-Driven Microservice
 ```bash
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService --config examples/event-driven.json
+microkit new OrderService --config examples/event-driven.json
 ```
 
 ### Enterprise Service
 ```bash
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new PaymentService --config examples/enterprise-service.json
+microkit new PaymentService --config examples/enterprise-service.json
 ```
 
 ## 🛠️ Development
@@ -288,8 +304,11 @@ dotnet build
 # Run tests
 dotnet test
 
-# Run CLI locally
+# Run CLI locally (if building from source)
 dotnet run --project src/CLI/MicroserviceGenerator.CLI -- --help
+
+# Or use installed version
+microkit --help
 ```
 
 ### Contributing
@@ -327,6 +346,19 @@ dotnet run --project src/CLI/MicroserviceGenerator.CLI -- --help
 - [ ] Advanced CQRS with separate read/write models
 - [ ] Observability (Logging, Metrics, Tracing)
 - [ ] Performance optimization
+
+## 📦 NuGet Package
+
+**MicroserviceKit** is available on NuGet.org:
+
+- **Package**: [MicroserviceKit](https://www.nuget.org/packages/MicroserviceKit/)
+- **Current Version**: 0.1.0-beta
+- **Command**: `microkit`
+- **Installation**: `dotnet tool install --global MicroserviceKit --prerelease`
+
+### Package Statistics
+[![NuGet Version](https://img.shields.io/nuget/v/MicroserviceKit?style=for-the-badge&logo=nuget)](https://www.nuget.org/packages/MicroserviceKit/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/MicroserviceKit?style=for-the-badge&logo=nuget)](https://www.nuget.org/packages/MicroserviceKit/)
 
 ## 📄 License
 
