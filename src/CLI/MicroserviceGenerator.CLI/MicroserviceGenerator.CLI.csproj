@@ -8,31 +8,36 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>microkit</ToolCommandName>
     <PackageId>MicroserviceKit</PackageId>
-    <Version>0.1.0-beta</Version>
+    <Version>0.2.0</Version>
     <Authors>Paweł Pilichowski</Authors>
-    <Description>🚀 Complete toolkit for generating .NET 8 microservices with DDD, CQRS, and Clean Architecture. Generate production-ready microservices with Domain Layer, REST APIs, Unit Tests, and more. BETA VERSION - Core functionality working, advanced features in development.</Description>
-    <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;unit-tests;beta;microkit</PackageTags>
+    <Description>🚀 Complete toolkit for generating production-ready .NET 8 microservices with DDD, CQRS, Clean Architecture, Event-Driven Architecture, and comprehensive infrastructure. Generate enterprise-grade microservices with REST APIs, CQRS, MongoDB read models, RabbitMQ messaging, external service integration, Docker, Kubernetes, and complete testing suite.</Description>
+    <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;event-driven;mongodb;rabbitmq;docker;kubernetes;enterprise;microkit</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/suranig/microservice-net8-ddd</PackageProjectUrl>
     <RepositoryUrl>https://github.com/suranig/microservice-net8-ddd</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>
-🎉 BETA Release 0.1.0
-✅ Core functionality working:
-- Domain Layer generation with AggregateKit
-- REST API Controllers with full CRUD
-- Comprehensive Unit Testing
-- CLI with interactive mode
-- Smart architecture selection
+🎉 Major Release 0.2.0 - Enterprise-Ready Microservices!
 
-🚧 In Development:
-- Application Layer (Commands/Queries/Handlers)
-- Infrastructure Layer (Repositories/DbContext)
-- Docker &amp; Kubernetes support
-- Integration Tests
+✅ NEW ENTERPRISE FEATURES:
+- 📨 Event-Driven Architecture with RabbitMQ messaging
+- 📊 CQRS with MongoDB read models and PostgreSQL write models  
+- 🌐 External Services integration with Polly resilience patterns
+- 🐳 Complete Docker &amp; Kubernetes deployment infrastructure
+- 🧪 Comprehensive Integration Testing with TestContainers
+- 🔒 Production-ready security, monitoring, and health checks
+- 📈 Built-in metrics, logging, and observability
 
-⚠️ This is a BETA version. Core features work but some modules are still in development.
+✅ COMPLETE INFRASTRUCTURE:
+- REST APIs with proper /api/rest/{aggregate} structure
+- Domain events with automatic read model synchronization
+- Service registry with circuit breaker, retry, timeout patterns
+- Docker Compose with full development stack
+- Kubernetes manifests with HPA, monitoring, security
+- Integration tests for APIs, databases, and messaging
+
+🚀 PRODUCTION READY: Generate enterprise-grade microservices with complete infrastructure, testing, and deployment capabilities!
     </PackageReleaseNotes>
   </PropertyGroup>
 
