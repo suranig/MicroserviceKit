@@ -8,404 +8,72 @@
 
 A powerful, configurable template generator for .NET 8 microservices with a modular "Lego blocks" approach. Generate production-ready microservices with Clean Architecture, DDD patterns, CQRS, containerization, and comprehensive testing.
 
-## ✨ Features
-
-### 🏗️ **Architecture Levels**
-- **MINIMAL**: Single project for simple CRUD services (1-2 developers)
-- **STANDARD**: 3-layer architecture for medium complexity (2-5 developers)  
-- **ENTERPRISE**: 4-layer architecture for complex services (5+ developers)
-- **AUTO**: Intelligent selection based on your requirements
-
-### 🧩 **Modular Components**
-- **Domain Layer**: Aggregates, Entities, Value Objects, Domain Events
-- **Application Layer**: Commands, Queries, Handlers, DTOs, Validation
-- **API Layer**: REST Controllers with OpenAPI, Validation, Error Handling
-- **Infrastructure Layer**: Repositories, DbContext, External Services
-- **Testing**: Unit Tests, Integration Tests, Test Utilities
-
-### 🐳 **Containerization**
-- **Docker**: Intelligent Dockerfile generation for microservice and infrastructure
-- **Docker Compose**: Orchestration with PostgreSQL, MongoDB, RabbitMQ
-- **Kubernetes**: Production-ready manifests with HPA, Services, ConfigMaps
-
-### 🔧 **Technologies**
-- **.NET 8** with latest C# features
-- **Wolverine** for CQRS/Mediator (MIT license)
-- **AggregateKit** for DDD base classes
-- **Entity Framework Core** for persistence
-- **FluentValidation** for input validation
-- **xUnit, FluentAssertions, Moq** for testing
-
-## 🚀 Quick Start
-
-### Installation
+## ✨ Quick Start
 
 ```bash
-# Install globally from NuGet
+# Install globally
 dotnet tool install --global MicroserviceKit --prerelease
 
-# Or install specific version
-dotnet tool install --global MicroserviceKit --version 0.1.0-beta
+# Generate new microservice
+microkit new MyService --interactive
 ```
 
-### Generate Your First Microservice
+## 📚 Documentation
 
-```bash
-# Interactive mode - guided setup
-microkit new OrderService --interactive
+For detailed documentation, please visit:
+- [Full Documentation](docs.md)
+- [Configuration Guide](docs.md#configuration-guide)
+- [Usage Examples](docs.md#usage-examples)
+- [Architecture Levels](docs.md#architecture-levels)
+- [Migration Guide](docs.md#migration-guide)
+- [FAQ](docs.md#faq)
 
-# Quick start with defaults
-microkit new OrderService
-
-# From configuration file
-microkit new OrderService --config examples/enterprise-service.json
-
-# Custom output directory
-microkit new OrderService --output ./my-services/
-
-# Show help
-microkit --help
-```
-
-### Alternative: Build from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/suranig/MicroserviceKit.git
-cd MicroserviceKit
-
-# Build and run locally
-dotnet build
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- new OrderService
-```
-
-## 📋 Configuration
-
-### Basic Configuration
-
-```json
-{
-  "ServiceName": "OrderService",
-  "RootNamespace": "Company.OrderService",
-  "Architecture": {
-    "Level": "standard"
-  },
-  "Features": {
-    "Api": {
-      "Style": "controllers",
-      "Documentation": true,
-      "Versioning": true
-    },
-    "Persistence": {
-      "WriteModel": "postgresql",
-      "ReadModel": "mongodb"
-    },
-    "Messaging": {
-      "Enabled": true,
-      "Provider": "rabbitmq"
-    }
-  },
-  "Domain": {
-    "Aggregates": [
-      {
-        "Name": "Order",
-        "Properties": [
-          { "Name": "CustomerId", "Type": "Guid" },
-          { "Name": "TotalAmount", "Type": "decimal" },
-          { "Name": "Status", "Type": "OrderStatus" }
-        ],
-        "Operations": ["Create", "UpdateStatus", "Cancel"]
-      }
-    ]
-  }
-}
-```
-
-### Architecture Levels
+## 🏗️ Architecture Levels
 
 | Level | Projects | Use Case | Team Size |
 |-------|----------|----------|-----------|
 | **MINIMAL** | 1 project | Simple CRUD, prototypes | 1-2 devs |
 | **STANDARD** | 3 projects | Business logic, medium complexity | 2-5 devs |
 | **ENTERPRISE** | 4+ projects | Complex domains, high scalability | 5+ devs |
-| **AUTO** | Intelligent | Analyzes your config and decides | Any |
 
-## 🏗️ Generated Structure
+## 🧩 Key Features
 
-### Standard Level
-```
-OrderService/
-├── src/
-│   ├── OrderService.Domain/           # Aggregates, Entities, Events
-│   ├── OrderService.Application/      # Commands, Queries, Handlers
-│   └── OrderService.Api/             # Controllers, DTOs, Middleware
-├── tests/
-│   ├── OrderService.UnitTests/       # Domain & Application tests
-│   └── OrderService.IntegrationTests/ # API & Database tests
-├── docker/
-│   ├── microservice.Dockerfile       # Main application
-│   ├── postgres.Dockerfile          # Write model
-│   ├── mongodb.Dockerfile           # Read model
-│   └── docker-compose.yml           # Full orchestration
-└── k8s/
-    ├── deployment.yaml              # Kubernetes deployment
-    ├── service.yaml                 # Load balancer
-    └── hpa.yaml                     # Auto-scaling
-```
+- **Domain-Driven Design**: Aggregates, Entities, Value Objects, Domain Events
+- **Clean Architecture**: Clear separation of concerns
+- **CQRS**: Commands, Queries, Handlers with Wolverine
+- **Event-Driven**: Domain events, message brokers
+- **Testing**: Unit, Integration, Architecture tests
+- **Containerization**: Docker & Kubernetes support
+- **Infrastructure**: PostgreSQL, MongoDB, Redis, RabbitMQ
 
-### Enterprise Level
-```
-OrderService/
-├── src/
-│   ├── OrderService.Domain/          # Rich domain model
-│   ├── OrderService.Application/     # Use cases & DTOs
-│   ├── OrderService.Infrastructure/  # Persistence & External services
-│   └── OrderService.Api/            # REST/gRPC endpoints
-├── tests/
-│   ├── OrderService.UnitTests/      # Fast, isolated tests
-│   ├── OrderService.IntegrationTests/ # Database & API tests
-│   └── OrderService.ArchitectureTests/ # Architecture compliance
-└── deployment/                      # Full DevOps setup
-```
-
-## 🧪 Testing Strategy
-
-### Generated Test Types
-
-**Unit Tests**
-- Domain logic and business rules
-- Command/Query handlers
-- Value object validation
-- Domain event handling
-
-**Integration Tests**
-- API endpoints with real database
-- Repository implementations
-- Message publishing/consuming
-- External service integration
-
-**Architecture Tests**
-- Layer dependency rules
-- Naming conventions
-- Code quality metrics
-
-### Test Example
-
-```csharp
-[Fact]
-public async Task CreateOrder_WithValidData_ShouldReturnOrderId()
-{
-    // Arrange
-    var command = new CreateOrderCommand(
-        CustomerId: Guid.NewGuid(),
-        Items: [new OrderItem("Product", 2, 10.00m)]
-    );
-
-    // Act
-    var result = await _handler.Handle(command, CancellationToken.None);
-
-    // Assert
-    result.Should().NotBeEmpty();
-    _mockRepository.Verify(x => x.AddAsync(
-        It.IsAny<Order>(), 
-        It.IsAny<CancellationToken>()), 
-        Times.Once);
-}
-```
-
-## 🐳 Docker & Kubernetes
-
-### Docker Compose (Development)
+## 🚀 Quick Examples
 
 ```bash
-# Start all services
-docker-compose up -d
+# Simple CRUD service
+microkit new ProductCatalog --level minimal
 
-# View logs
-docker-compose logs -f orderservice
+# Full DDD service
+microkit new OrderService --level standard
 
-# Scale microservice
-docker-compose up -d --scale orderservice=3
+# Enterprise service
+microkit new PaymentService --level enterprise
+
+# Interactive mode
+microkit new MyService --interactive
 ```
-
-### Kubernetes (Production)
-
-```bash
-# Deploy to Kubernetes
-kubectl apply -f k8s/
-
-# Check status
-kubectl get pods -l app=orderservice
-
-# Scale horizontally
-kubectl scale deployment orderservice-deployment --replicas=5
-
-# View auto-scaling
-kubectl get hpa
-```
-
-## 🔄 Migration & Evolution
-
-### Migrate Existing Projects
-
-```bash
-# Analyze current project
-microkit migrate --analyze
-
-# Preview migration to standard level
-microkit migrate --level standard --dry-run
-
-# Execute migration
-microkit migrate --level standard
-
-# View migration history
-microkit history
-```
-
-### Smart Auto-Configuration
-
-The generator automatically enables features based on complexity:
-
-- **DDD**: Enabled when complexity >= medium
-- **CQRS**: Enabled when multiple operations per aggregate
-- **Infrastructure Layer**: Enabled when external dependencies detected
-- **Docker**: Enabled for standard+ levels
-- **Kubernetes**: Enabled for enterprise level
-
-## 📚 Examples
-
-### Simple CRUD Service
-```bash
-microkit new ProductCatalog --config examples/minimal-crud.json
-```
-
-### Event-Driven Microservice
-```bash
-microkit new OrderService --config examples/event-driven.json
-```
-
-### Enterprise Service
-```bash
-microkit new PaymentService --config examples/enterprise-service.json
-```
-
-## 🛠️ Development
-
-### Prerequisites
-- .NET 8 SDK
-- Docker & Docker Compose
-- Kubernetes (optional)
-
-### Build & Test
-```bash
-# Build solution
-make build
-
-# Run unit tests
-make test
-
-# Run CLI tests
-make cli-test
-
-# Run full CLI test suite
-make cli-test-full
-
-# Clean CLI test directories
-make cli-clean
-
-# Development workflow (build + test)
-make dev
-
-# Run CLI locally (if building from source)
-dotnet run --project src/CLI/CLI.csproj -- --help
-
-# Or use installed version
-microkit --help
-```
-
-### CLI Testing
-
-The project includes a dedicated testing infrastructure for CLI commands:
-
-```bash
-# Quick CLI test (standard microservice)
-./test_cli/quick-test.sh
-
-# Full test suite (all architecture levels)
-./test_cli/full-test.sh
-
-# Clean test directories
-./test_cli/clean.sh
-
-# Test specific architecture level
-make test-basic      # Minimal level
-make test-standard   # Standard level  
-make test-enterprise # Enterprise level
-
-# Interactive CLI testing
-make cli-interactive
-```
-
-**Test Directory Structure:**
-```
-test_cli/
-├── basic/          # Basic microservice tests
-├── standard/       # Standard architecture tests
-├── enterprise/     # Enterprise configuration tests
-├── messaging/      # Messaging module tests (future)
-└── *.sh           # Test automation scripts
-```
-
-All CLI tests are automatically excluded from version control and run in isolated directories.
-
-### Contributing
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open Pull Request
-
-## 📖 Documentation
-
-- [Development Plan](DEVELOPMENT_PLAN.md) - Detailed roadmap and implementation status
-- [Usage Guide](USAGE.md) - Comprehensive usage examples
-- [Examples](examples/) - Configuration examples for different scenarios
-- [Migration Guide](examples/migration-examples.md) - How to migrate existing projects
-
-## 🎯 Roadmap
-
-### ✅ **Completed (Phase 1-2)**
-- [x] Domain Layer generation with AggregateKit
-- [x] REST API Controllers with full CRUD
-- [x] Comprehensive Unit Testing
-- [x] CLI with interactive mode
-- [x] Smart architecture level selection
-
-### 🚧 **In Progress (Phase 3)**
-- [ ] Application Layer (Commands/Queries/Handlers)
-- [ ] Infrastructure Layer (Repositories/DbContext)
-- [ ] Integration Testing
-- [ ] Docker & Kubernetes support
-
-### 🔮 **Planned (Phase 4+)**
-- [ ] gRPC API support
-- [ ] Event Sourcing patterns
-- [ ] Advanced CQRS with separate read/write models
-- [ ] Observability (Logging, Metrics, Tracing)
-- [ ] Performance optimization
 
 ## 📦 NuGet Package
 
 **MicroserviceKit** is available on NuGet.org:
 
 - **Package**: [MicroserviceKit](https://www.nuget.org/packages/MicroserviceKit/)
-- **Current Version**: 0.1.0-beta
+- **Current Version**: 0.2.0
 - **Command**: `microkit`
 - **Installation**: `dotnet tool install --global MicroserviceKit --prerelease`
 
-### Package Statistics
-[![NuGet Version](https://img.shields.io/nuget/v/MicroserviceKit?style=for-the-badge&logo=nuget)](https://www.nuget.org/packages/MicroserviceKit/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/MicroserviceKit?style=for-the-badge&logo=nuget)](https://www.nuget.org/packages/MicroserviceKit/)
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](docs.md#contributing) for details.
 
 ## 📄 License
 
@@ -413,4 +81,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for .NET developers who want to build better microservices faster.** 
+**Made with ❤️ for .NET developers who want to build better microservices faster.**
