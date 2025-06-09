@@ -176,7 +176,7 @@ public class MigrationHistoryService : IMigrationHistoryService
         return targetIndex >= currentIndex;
     }
 
-    public async Task<List<string>> GetMigrationPathAsync(string currentLevel, string targetLevel)
+    public Task<List<string>> GetMigrationPathAsync(string currentLevel, string targetLevel)
     {
         var levels = new[] { "minimal", "standard", "enterprise" };
         var currentIndex = Array.IndexOf(levels, currentLevel);
@@ -188,7 +188,7 @@ public class MigrationHistoryService : IMigrationHistoryService
             path.Add(levels[i]);
         }
         
-        return path;
+        return Task.FromResult(path);
     }
 
     public async Task RecordMigrationStartAsync(string projectPath, string fromLevel, string toLevel, string? configPath = null)

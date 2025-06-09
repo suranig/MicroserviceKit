@@ -40,13 +40,15 @@ public class DeploymentModule : ITemplateModule
         await GenerateProjectFilesAsync(config.OutputPath, config);
     }
 
-    private async Task CreateDeploymentStructureAsync(string outputPath, TemplateConfiguration config)
+    private Task CreateDeploymentStructureAsync(string outputPath, TemplateConfiguration config)
     {
         Directory.CreateDirectory(outputPath);
         Directory.CreateDirectory(Path.Combine(outputPath, "docker"));
         Directory.CreateDirectory(Path.Combine(outputPath, "kubernetes"));
         Directory.CreateDirectory(Path.Combine(outputPath, "scripts"));
         Directory.CreateDirectory(Path.Combine(outputPath, "monitoring"));
+        
+        return Task.CompletedTask;
     }
 
     private async Task GenerateDockerFilesAsync(string outputPath, TemplateConfiguration config)
