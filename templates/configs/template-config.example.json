@@ -1,9 +1,44 @@
 {
   "microserviceName": "OrderService",
   "namespace": "ECommerce.OrderService",
-  "outputPath": "./generated",
-  "ddd": {
-    "enabled": true,
+  "outputPath": "./",
+  "architecture": {
+    "level": "standard",
+    "patterns": {
+      "ddd": "enabled",
+      "cqrs": "enabled",
+      "eventSourcing": "disabled"
+    }
+  },
+  "features": {
+    "api": {
+      "style": "controllers",
+      "authentication": "none",
+      "documentation": "auto"
+    },
+    "persistence": {
+      "provider": "inmemory",
+      "migrations": "auto",
+      "readModel": "same"
+    },
+    "messaging": {
+      "enabled": false,
+      "provider": "inmemory",
+      "patterns": []
+    },
+    "deployment": {
+      "docker": "auto",
+      "kubernetes": "disabled",
+      "healthChecks": "auto"
+    },
+    "testing": {
+      "level": "integration",
+      "framework": "xunit",
+      "mockingEnabled": true,
+      "testContainersEnabled": false
+    }
+  },
+  "domain": {
     "aggregates": [
       {
         "name": "Order",
@@ -20,11 +55,11 @@
           },
           {
             "name": "Status",
-            "type": "OrderStatus",
+            "type": "string",
             "isRequired": true
           }
         ],
-        "methods": ["AddItem", "RemoveItem", "Confirm", "Cancel"]
+        "operations": ["AddItem", "RemoveItem", "Confirm", "Cancel"]
       },
       {
         "name": "Customer",
@@ -40,7 +75,7 @@
             "isRequired": true
           }
         ],
-        "methods": ["UpdateEmail", "UpdateName"]
+        "operations": ["UpdateEmail", "UpdateName"]
       }
     ],
     "valueObjects": [
@@ -80,25 +115,5 @@
         ]
       }
     ]
-  },
-  "cqrs": {
-    "enabled": true,
-    "mediator": "wolverine"
-  },
-  "api": {
-    "types": ["rest"],
-    "authentication": "none"
-  },
-  "persistence": {
-    "writeModel": "inmemory",
-    "readModel": "inmemory"
-  },
-  "messaging": {
-    "enabled": false,
-    "provider": "inmemory"
-  },
-  "containerization": {
-    "docker": false,
-    "kubernetes": false
   }
 } 

@@ -48,8 +48,13 @@
     <ProjectReference Include="..\..\Core\TemplateEngine\TemplateEngine.csproj" />
     <ProjectReference Include="..\..\Modules\DDD\DDD.csproj" />
     <ProjectReference Include="..\..\Modules\Application\Application.csproj" />
+    <ProjectReference Include="..\..\Modules\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Api\Api.csproj" />
+    <ProjectReference Include="..\..\Modules\ExternalServices\ExternalServices.csproj" />
+    <ProjectReference Include="..\..\Modules\Messaging\Messaging.csproj" />
+    <ProjectReference Include="..\..\Modules\ReadModels\ReadModels.csproj" />
     <ProjectReference Include="..\..\Modules\Tests\Tests.csproj" />
+    <ProjectReference Include="..\..\Modules\Deployment\Deployment.csproj" />
   </ItemGroup>
 
 </Project> 

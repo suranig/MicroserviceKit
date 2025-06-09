@@ -299,17 +299,64 @@ microkit new PaymentService --config examples/enterprise-service.json
 ### Build & Test
 ```bash
 # Build solution
-dotnet build
+make build
 
-# Run tests
-dotnet test
+# Run unit tests
+make test
+
+# Run CLI tests
+make cli-test
+
+# Run full CLI test suite
+make cli-test-full
+
+# Clean CLI test directories
+make cli-clean
+
+# Development workflow (build + test)
+make dev
 
 # Run CLI locally (if building from source)
-dotnet run --project src/CLI/MicroserviceGenerator.CLI -- --help
+dotnet run --project src/CLI/CLI.csproj -- --help
 
 # Or use installed version
 microkit --help
 ```
+
+### CLI Testing
+
+The project includes a dedicated testing infrastructure for CLI commands:
+
+```bash
+# Quick CLI test (standard microservice)
+./test_cli/quick-test.sh
+
+# Full test suite (all architecture levels)
+./test_cli/full-test.sh
+
+# Clean test directories
+./test_cli/clean.sh
+
+# Test specific architecture level
+make test-basic      # Minimal level
+make test-standard   # Standard level  
+make test-enterprise # Enterprise level
+
+# Interactive CLI testing
+make cli-interactive
+```
+
+**Test Directory Structure:**
+```
+test_cli/
+├── basic/          # Basic microservice tests
+├── standard/       # Standard architecture tests
+├── enterprise/     # Enterprise configuration tests
+├── messaging/      # Messaging module tests (future)
+└── *.sh           # Test automation scripts
+```
+
+All CLI tests are automatically excluded from version control and run in isolated directories.
 
 ### Contributing
 1. Fork the repository

@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0",
+  "description": "MicroserviceKit Template Index",
+  "lastUpdated": "2024-06-09",
+  
+  "categories": {
+    "levels": {
+      "description": "Architecture level templates",
+      "path": "levels/",
+      "templates": [
+        {
+          "name": "minimal-service.json",
+          "title": "Minimal Service",
+          "description": "Single project, basic CRUD, in-memory persistence",
+          "complexity": "simple",
+          "features": ["minimal-api", "inmemory-db", "basic-crud"],
+          "projectCount": 1,
+          "estimatedTime": "5 minutes"
+        },
+        {
+          "name": "standard-service.json", 
+          "title": "Standard Service",
+          "description": "Clean Architecture with Domain, Application, API layers",
+          "complexity": "medium",
+          "features": ["clean-architecture", "cqrs", "sqlite", "jwt-auth"],
+          "projectCount": 3,
+          "estimatedTime": "10 minutes"
+        },
+        {
+          "name": "enterprise-service.json",
+          "title": "Enterprise Service", 
+          "description": "Full enterprise architecture with all patterns",
+          "complexity": "complex",
+          "features": ["ddd", "cqrs", "event-sourcing", "microservices-patterns", "docker", "kubernetes"],
+          "projectCount": 4,
+          "estimatedTime": "20 minutes"
+        }
+      ]
+    },
+    
+    "examples": {
+      "description": "Complete example configurations",
+      "path": "examples/",
+      "templates": [
+        {
+          "name": "complete-microservice.json",
+          "title": "Complete Microservice Example",
+          "description": "Full-featured microservice with all enterprise patterns",
+          "complexity": "complex",
+          "features": ["enterprise-architecture", "external-services", "messaging", "caching"],
+          "projectCount": 4,
+          "estimatedTime": "25 minutes"
+        }
+      ]
+    },
+    
+    "configs": {
+      "description": "Base configuration templates",
+      "path": "configs/",
+      "templates": [
+        {
+          "name": "template-config.example.json",
+          "title": "Base Configuration Template",
+          "description": "Complete configuration template with all options",
+          "complexity": "reference",
+          "features": ["all-options", "documentation", "examples"],
+          "projectCount": "variable",
+          "estimatedTime": "depends on customization"
+        },
+        {
+          "name": "template-config-levels.json",
+          "title": "Architecture Levels Configuration",
+          "description": "Configuration showing different architecture levels",
+          "complexity": "reference", 
+          "features": ["level-comparison", "architecture-patterns"],
+          "projectCount": "variable",
+          "estimatedTime": "depends on level"
+        }
+      ]
+    }
+  },
+  
+  "quickStart": {
+    "beginner": "levels/minimal-service.json",
+    "intermediate": "levels/standard-service.json", 
+    "advanced": "levels/enterprise-service.json",
+    "example": "examples/complete-microservice.json"
+  },
+  
+  "usage": {
+    "cli": "dotnet run --project src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new MyService --config templates/{template-path} --output ./output",
+    "interactive": "dotnet run --project src/CLI/MicroserviceGenerator.CLI/MicroserviceGenerator.CLI.csproj -- new MyService --interactive --output ./output"
+  },
+  
+  "validation": {
+    "schema": "src/Core/TemplateEngine/Configuration/TemplateConfiguration.cs",
+    "required": ["microserviceName", "namespace"],
+    "optional": ["architecture", "features", "domain"]
+  }
+} 

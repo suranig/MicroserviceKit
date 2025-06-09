@@ -16,3 +16,7 @@ nupkg/
 # .microservice-history.json - KEEP this file versioned!
 # It contains migration history and project evolution tracking
 
+# CLI Testing directories
+test_cli/
+**/test_cli/
+

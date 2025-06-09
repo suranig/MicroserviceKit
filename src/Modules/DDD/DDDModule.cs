@@ -15,6 +15,9 @@ public class DDDModule : ITemplateModule
 
     public async Task GenerateAsync(GenerationContext context)
     {
+        // Create Domain project structure and .csproj file
+        await CreateDomainProjectStructureAsync(context);
+
         if (context.Configuration.Domain?.Aggregates != null)
         {
             foreach (var aggregate in context.Configuration.Domain.Aggregates)
@@ -33,6 +36,39 @@ public class DDDModule : ITemplateModule
         }
     }
 
+    private async Task CreateDomainProjectStructureAsync(GenerationContext context)
+    {
+        var config = context.Configuration;
+        var domainPath = context.GetDomainProjectPath();
+
+        // Create directories
+        Directory.CreateDirectory(Path.Combine(domainPath, "Entities"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "Events"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "ValueObjects"));
+        Directory.CreateDirectory(Path.Combine(domainPath, "Interfaces"));
+
+        // Generate .csproj file
+        var csprojContent = GenerateDomainProjectFile(config);
+        await File.WriteAllTextAsync(Path.Combine(domainPath, $"{config.MicroserviceName}.Domain.csproj"), csprojContent);
+    }
+
+    private string GenerateDomainProjectFile(TemplateConfiguration config)
+    {
+        return $@"<Project Sdk=""Microsoft.NET.Sdk"">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include=""AggregateKit"" Version=""0.2.0"" />
+  </ItemGroup>
+
+</Project>";
+    }
+
     private async Task GenerateAggregateAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var template = GetAggregateTemplate();
@@ -43,7 +79,8 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateConstructor(aggregate))
             .Replace("{{Methods}}", GenerateMethods(aggregate));
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/Entities/{aggregate.Name}.cs", content);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/Entities/{aggregate.Name}.cs", content);
     }
 
     private async Task GenerateAggregateEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
@@ -53,9 +90,10 @@ public class DDDModule : ITemplateModule
         var createdEventContent = createdEventTemplate
             .Replace("{{Namespace}}", context.Configuration.Namespace)
             .Replace("{{EventName}}", $"{aggregate.Name}CreatedEvent")
-            .Replace("{{Parameters}}", $"Guid {aggregate.Name}Id, {GenerateEventParameters(aggregate.Properties)}");
+            .Replace("{{Parameters}}", $"Guid aggregateId");
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
     }
 
     private async Task GenerateValueObjectAsync(GenerationContext context, ValueObjectConfiguration valueObject)
@@ -68,7 +106,8 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateValueObjectConstructor(valueObject))
             .Replace("{{EqualityComponents}}", GenerateEqualityComponents(valueObject.Properties));
 
-        await context.WriteFileAsync($"src/Domain/{context.Configuration.MicroserviceName}.Domain/ValueObjects/{valueObject.Name}.cs", content);
+        var domainPath = context.GetDomainProjectPath();
+        await context.WriteFileAsync($"{domainPath}/ValueObjects/{valueObject.Name}.cs", content);
     }
 
     private string GenerateProperties(List<PropertyConfiguration> properties)
@@ -86,7 +125,7 @@ public class DDDModule : ITemplateModule
     {{
         {assignments}
         
-        AddDomainEvent(new {aggregate.Name}CreatedEvent(Id{(aggregate.Properties.Any() ? ", " + string.Join(", ", aggregate.Properties.Select(p => p.Name)) : "")}));
+        AddDomainEvent(new {aggregate.Name}CreatedEvent(Id));
     }}";
     }
 
@@ -143,7 +182,15 @@ public class {{AggregateName}} : AggregateRoot<Guid>
 
 namespace {{Namespace}}.Domain.Events;
 
-public record {{EventName}}({{Parameters}}) : DomainEventBase;";
+public class {{EventName}} : DomainEventBase
+{
+    public Guid AggregateId { get; }
+    
+    public {{EventName}}({{Parameters}})
+    {
+        AggregateId = aggregateId;
+    }
+}";
     }
 
     private string GetValueObjectTemplate()

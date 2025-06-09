@@ -32,6 +32,51 @@ public class GenerationContext
         await File.WriteAllTextAsync(fullPath, content);
         GeneratedFiles.Add(new GeneratedFile(relativePath, content));
     }
+
+    // Helper methods for generating project paths
+    public string GetDomainProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.DomainProjectPath);
+    }
+
+    public string GetApplicationProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.ApplicationProjectPath);
+    }
+
+    public string GetInfrastructureProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.InfrastructureProjectPath);
+    }
+
+    public string GetApiProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.ApiProjectPath);
+    }
+
+    public string GetTestsProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.TestsProjectPath);
+    }
+
+    public string GetIntegrationTestsProjectPath()
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return ResolvePath(structure.IntegrationTestsProjectPath);
+    }
+
+    private string ResolvePath(string pathTemplate)
+    {
+        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        return pathTemplate
+            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{MicroserviceName}", Configuration.MicroserviceName);
+    }
 }
 
 public record GeneratedFile(string Path, string Content); 

@@ -9,6 +9,55 @@ public class TemplateConfiguration
     public ArchitectureConfiguration? Architecture { get; set; }
     public FeaturesConfiguration? Features { get; set; }
     public DomainConfiguration? Domain { get; set; }
+    public ProjectStructureConfiguration? ProjectStructure { get; set; }
+    
+    // Helper methods for simple access
+    public string GetDatabaseProvider()
+    {
+        // Nowa struktura Database (enterprise)
+        if (Features?.Database?.WriteModel?.Provider != null)
+        {
+            return Features.Database.WriteModel.Provider.ToLowerInvariant();
+        }
+        
+        // Stara struktura Persistence (standard)
+        if (Features?.Persistence?.Provider != null)
+        {
+            return Features.Persistence.Provider.ToLowerInvariant();
+        }
+        
+        return "inmemory";
+    }
+    
+    public string GetReadModelProvider()
+    {
+        // Nowa struktura Database (enterprise)
+        if (Features?.Database?.ReadModel?.Provider != null)
+        {
+            var provider = Features.Database.ReadModel.Provider;
+            return provider == "same" ? GetDatabaseProvider() : provider.ToLowerInvariant();
+        }
+        
+        // Stara struktura Persistence (standard)
+        if (Features?.Persistence?.ReadModel != null)
+        {
+            var readModel = Features.Persistence.ReadModel;
+            return readModel == "same" ? GetDatabaseProvider() : readModel.ToLowerInvariant();
+        }
+        
+        return GetDatabaseProvider();
+    }
+}
+
+public class ProjectStructureConfiguration
+{
+    public string SourceDirectory { get; set; } = "src";
+    public string DomainProjectPath { get; set; } = "{SourceDirectory}/Domain/{MicroserviceName}.Domain";
+    public string ApplicationProjectPath { get; set; } = "{SourceDirectory}/Application/{MicroserviceName}.Application";
+    public string InfrastructureProjectPath { get; set; } = "{SourceDirectory}/Infrastructure/{MicroserviceName}.Infrastructure";
+    public string ApiProjectPath { get; set; } = "{SourceDirectory}/Api/{MicroserviceName}.Api";
+    public string TestsProjectPath { get; set; } = "tests/{MicroserviceName}.Tests";
+    public string IntegrationTestsProjectPath { get; set; } = "tests/{MicroserviceName}.IntegrationTests";
 }
 
 public class ArchitectureConfiguration
@@ -31,6 +80,7 @@ public class FeaturesConfiguration
     public MessagingConfiguration? Messaging { get; set; }
     public ObservabilityConfiguration? Observability { get; set; }
     public DeploymentConfiguration? Deployment { get; set; }
+    public TestingConfiguration? Testing { get; set; }
     
     // Enterprise features
     public DatabaseConfiguration? Database { get; set; }
@@ -98,4 +148,12 @@ public class DeploymentConfiguration
     public string? Docker { get; set; } = "auto"; // auto | enabled | disabled
     public string? Kubernetes { get; set; } = "disabled";
     public string? HealthChecks { get; set; } = "auto";
+}
+
+public class TestingConfiguration
+{
+    public string? Level { get; set; } = "unit"; // unit | integration | full | enterprise
+    public string? Framework { get; set; } = "xunit"; // xunit | nunit | mstest
+    public bool MockingEnabled { get; set; } = true;
+    public bool TestContainersEnabled { get; set; } = false;
 } 

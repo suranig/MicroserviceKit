@@ -96,6 +96,11 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
         Namespace = PromptWithDefault($"Namespace", $"Company.{name}")
     };
     
+    // Architecture Level
+    Console.WriteLine("\n🏗️ Architecture Configuration:");
+    var level = PromptChoice("Architecture level", new[] { "minimal", "standard", "enterprise" }, "standard");
+    config.Architecture = new ArchitectureConfiguration { Level = level };
+    
     // DDD Configuration
     Console.WriteLine("\n📦 Domain-Driven Design Configuration:");
     var enableDDD = PromptYesNo("Enable DDD patterns?", true);
@@ -135,15 +140,178 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
     
     // API Configuration
     Console.WriteLine("\n🌐 API Configuration:");
-    var apiStyle = PromptChoice("API style", new[] { "minimal", "controllers", "both" }, "minimal");
+    var apiStyle = PromptChoice("API style", new[] { "minimal", "controllers", "both" }, "controllers");
+    var authType = PromptChoice("Authentication", new[] { "none", "jwt", "oauth" }, "none");
+    
     config.Features ??= new FeaturesConfiguration();
     config.Features.Api ??= new ApiConfiguration();
     config.Features.Api.Style = apiStyle;
+    config.Features.Api.Authentication = authType;
     
-    // Persistence
-    Console.WriteLine("\n💾 Persistence Configuration:");
-    config.Features.Persistence ??= new PersistenceConfiguration();
-    config.Features.Persistence.Provider = PromptChoice("Persistence provider", new[] { "inmemory", "sqlite", "postgresql", "sqlserver" }, "inmemory");
+    // Database Configuration
+    Console.WriteLine("\n💾 Database Configuration:");
+    var enableDatabase = PromptYesNo("Configure database?", true);
+    
+    if (enableDatabase)
+    {
+        config.Features.Database ??= new DatabaseConfiguration();
+        
+        // Write Model (Primary Database)
+        Console.WriteLine("\n📝 Write Model Database:");
+        var writeProvider = PromptChoice("Write database provider", 
+            new[] { "postgresql", "mysql", "sqlserver", "sqlite" }, "postgresql");
+        
+        config.Features.Database.WriteModel = new WriteModelConfiguration
+        {
+            Provider = writeProvider,
+            EnableMigrations = PromptYesNo("Enable migrations?", true),
+            EnableAuditing = PromptYesNo("Enable auditing?", false),
+            EnableSoftDelete = PromptYesNo("Enable soft delete?", false)
+        };
+        
+        // Read Model Configuration
+        Console.WriteLine("\n📖 Read Model Configuration:");
+        var enableReadModel = PromptYesNo("Use separate read model?", false);
+        
+        if (enableReadModel)
+        {
+            var readProvider = PromptChoice("Read model provider", 
+                new[] { "mongodb", "elasticsearch", "same" }, "mongodb");
+            
+            config.Features.Database.ReadModel = new ReadModelConfiguration
+            {
+                Provider = readProvider,
+                EnableProjections = PromptYesNo("Enable projections?", true),
+                SyncStrategy = PromptChoice("Sync strategy", 
+                    new[] { "eventual", "immediate", "batch" }, "eventual")
+            };
+        }
+        
+        // Cache Configuration
+        Console.WriteLine("\n🗄️ Cache Configuration:");
+        var enableCache = PromptYesNo("Enable caching?", false);
+        
+        if (enableCache)
+        {
+            var cacheProvider = PromptChoice("Cache provider", 
+                new[] { "redis", "inmemory", "distributed" }, "redis");
+            
+            config.Features.Database.Cache = new CacheConfiguration
+            {
+                Enabled = true,
+                Provider = cacheProvider,
+                DefaultTtlMinutes = int.Parse(PromptWithDefault("Default TTL (minutes)", "60"))
+            };
+        }
+    }
+    
+    // Messaging Configuration
+    Console.WriteLine("\n📨 Messaging Configuration:");
+    var enableMessaging = PromptYesNo("Enable messaging (events)?", false);
+    
+    if (enableMessaging)
+    {
+        var messagingProvider = PromptChoice("Messaging provider", 
+            new[] { "rabbitmq", "servicebus", "inmemory" }, "rabbitmq");
+        
+        config.Features.Messaging = new MessagingConfiguration
+        {
+            Enabled = true,
+            Provider = messagingProvider,
+            Patterns = new List<string>()
+        };
+        
+        if (PromptYesNo("Enable outbox pattern?", true))
+            config.Features.Messaging.Patterns.Add("outbox");
+        
+        if (PromptYesNo("Enable domain events?", true))
+            config.Features.Messaging.Patterns.Add("events");
+        
+        if (PromptYesNo("Enable saga pattern?", false))
+            config.Features.Messaging.Patterns.Add("saga");
+    }
+    
+    // External Services Configuration
+    Console.WriteLine("\n🔗 External Services Configuration:");
+    var enableExternalServices = PromptYesNo("Configure external services?", false);
+    
+    if (enableExternalServices)
+    {
+        config.Features.ExternalServices = new ExternalServicesConfiguration
+        {
+            Enabled = true,
+            Services = new List<ExternalServiceConfiguration>(),
+            Resilience = new ResilienceConfiguration()
+        };
+        
+        Console.WriteLine("\nDefine external services (press Enter with empty name to finish):");
+        while (true)
+        {
+            var serviceName = Prompt("Service name");
+            if (string.IsNullOrEmpty(serviceName)) break;
+            
+            var baseUrl = Prompt($"Base URL for {serviceName}");
+            var serviceType = PromptChoice("Service type", 
+                new[] { "http", "grpc", "graphql" }, "http");
+            
+            var externalService = new ExternalServiceConfiguration
+            {
+                Name = serviceName,
+                BaseUrl = baseUrl,
+                Type = serviceType,
+                Operations = new List<string>()
+            };
+            
+            Console.WriteLine($"Operations for {serviceName} (press Enter to finish):");
+            while (true)
+            {
+                var operation = Prompt("Operation name");
+                if (string.IsNullOrEmpty(operation)) break;
+                externalService.Operations.Add(operation);
+            }
+            
+            config.Features.ExternalServices.Services.Add(externalService);
+        }
+        
+        // Resilience Configuration
+        Console.WriteLine("\n🛡️ Resilience Configuration:");
+        config.Features.ExternalServices.Resilience.Retry.Enabled = PromptYesNo("Enable retry policy?", true);
+        if (config.Features.ExternalServices.Resilience.Retry.Enabled)
+        {
+            config.Features.ExternalServices.Resilience.Retry.MaxAttempts = 
+                int.Parse(PromptWithDefault("Max retry attempts", "3"));
+        }
+        
+        config.Features.ExternalServices.Resilience.CircuitBreaker.Enabled = 
+            PromptYesNo("Enable circuit breaker?", true);
+        
+        config.Features.ExternalServices.Resilience.Timeout.Enabled = 
+            PromptYesNo("Enable timeout policy?", true);
+    }
+    
+    // Testing Configuration
+    Console.WriteLine("\n🧪 Testing Configuration:");
+    var testLevel = PromptChoice("Testing level", 
+        new[] { "unit", "integration", "full", "enterprise" }, "integration");
+    
+    config.Features.Testing = new TestingConfiguration
+    {
+        Level = testLevel,
+        MockingEnabled = PromptYesNo("Enable mocking?", true),
+        TestContainersEnabled = PromptYesNo("Enable TestContainers?", testLevel == "integration" || testLevel == "full")
+    };
+    
+    // Deployment Configuration
+    Console.WriteLine("\n🚀 Deployment Configuration:");
+    var enableDocker = PromptYesNo("Generate Docker configuration?", true);
+    var enableKubernetes = PromptYesNo("Generate Kubernetes configuration?", false);
+    
+    config.Features.Deployment = new DeploymentConfiguration
+    {
+        Docker = enableDocker ? "enabled" : "disabled",
+        Kubernetes = enableKubernetes ? "enabled" : "disabled",
+        HealthChecks = "auto"
+    };
     
     return config;
 }
@@ -156,7 +324,7 @@ static TemplateConfiguration CreateDefaultConfig(string name)
         Namespace = $"Company.{name}",
         Architecture = new ArchitectureConfiguration
         {
-            Level = "minimal"
+            Level = "standard"
         },
         Domain = new DomainConfiguration
         {
@@ -183,6 +351,15 @@ static TemplateConfiguration CreateDefaultConfig(string name)
             Persistence = new PersistenceConfiguration
             {
                 Provider = "inmemory"
+            },
+            Testing = new TestingConfiguration
+            {
+                Level = "integration"
+            },
+            Deployment = new DeploymentConfiguration
+            {
+                Docker = "auto",
+                Kubernetes = "disabled"
             }
         }
     };
@@ -195,8 +372,14 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
     {
         new DDDModule(),
         new Microservice.Modules.Application.ApplicationModule(),
+        new Microservice.Modules.Infrastructure.InfrastructureModule(),
         new Microservice.Modules.Api.RestApiModule(),
-        new Microservice.Modules.Tests.UnitTestModule()
+        new Microservice.Modules.ExternalServices.ExternalServicesModule(),
+        new Microservice.Modules.Messaging.MessagingModule(),
+        new Microservice.Modules.ReadModels.ReadModelsModule(),
+        new Microservice.Modules.Tests.UnitTestModule(),
+        new Microservice.Modules.Tests.IntegrationTestModule(),
+        new Microservice.Modules.Deployment.DeploymentModule()
     };
     
     foreach (var module in modules.Where(m => m.IsEnabled(config)))
@@ -211,6 +394,8 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
 static async Task GenerateProjectStructure(GenerationContext context)
 {
     var config = context.Configuration;
+    var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
+    var sourceDir = structure.SourceDirectory;
     
     // Generate solution file
     var solutionContent = $@"
@@ -219,19 +404,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 
-Project(""{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}"") = ""src"", ""src"", ""{{66448982-949A-4E9E-9EFA-CED092C125CB}}""
+Project(""{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}"") = ""{sourceDir}"", ""{sourceDir}"", ""{{66448982-949A-4E9E-9EFA-CED092C125CB}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""src\\Api\\{config.MicroserviceName}.Api\\{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468ED}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468ED}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""src\\Application\\{config.MicroserviceName}.Application\\{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D1}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""{sourceDir}/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D1}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""src\\Domain\\{config.MicroserviceName}.Domain\\{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""{sourceDir}/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
 EndProject
 
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""src\\Infrastructure\\{config.MicroserviceName}.Infrastructure\\{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D8}}""
+Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D8}}""
 EndProject
 ";
     
@@ -258,7 +443,7 @@ This microservice implements:
 ### Running locally
 ```bash
 dotnet restore
-dotnet run --project src/Api/{config.MicroserviceName}.Api
+dotnet run --project {sourceDir}/Api/{config.MicroserviceName}.Api
 ```
 
 ## API Documentation

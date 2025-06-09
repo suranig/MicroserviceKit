@@ -1,0 +1,251 @@
+version: '3.8'
+
+services:
+  # Main microservice
+  orderservice-api:
+    build:
+      context: ../generated
+      dockerfile: deployment/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=OrderServiceDb;Username=postgres;Password=postgres123
+      - MongoDB__ConnectionString=mongodb://admin:admin123@mongodb:27017
+      - MongoDB__DatabaseName=OrderService_ReadModels
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__UserName=admin
+      - RabbitMQ__Password=admin123
+      - Redis__ConnectionString=redis:6379
+      - PaymentGateway__BaseUrl=http://payment-gateway:8081
+      - NotificationService__BaseUrl=http://notification-service:8082
+      - InventoryService__BaseUrl=http://inventory-service:8083
+    depends_on:
+      - postgres
+      - mongodb
+      - rabbitmq
+      - redis
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Write Model Database (PostgreSQL)
+  postgres:
+    image: postgres:15-alpine
+    container_name: orderservice-postgres
+    environment:
+      - POSTGRES_DB=OrderServiceDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Read Model Database (MongoDB)
+  mongodb:
+    image: mongo:7-jammy
+    container_name: orderservice-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE=OrderService_ReadModels
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./init-scripts/mongodb:/docker-entrypoint-initdb.d
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Message Broker (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: orderservice-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+      - RABBITMQ_DEFAULT_VHOST=/
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Cache (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: orderservice-redis
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # External Service Mocks
+  payment-gateway:
+    image: mockserver/mockserver:5.15.0
+    container_name: payment-gateway-mock
+    environment:
+      - MOCKSERVER_PROPERTY_FILE=/config/mockserver.properties
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/payment-gateway-expectations.json
+    ports:
+      - "8081:1080"
+    volumes:
+      - ./mocks/payment-gateway:/config
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  notification-service:
+    image: mockserver/mockserver:5.15.0
+    container_name: notification-service-mock
+    environment:
+      - MOCKSERVER_PROPERTY_FILE=/config/mockserver.properties
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/notification-service-expectations.json
+    ports:
+      - "8082:1080"
+    volumes:
+      - ./mocks/notification-service:/config
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  inventory-service:
+    image: mockserver/mockserver:5.15.0
+    container_name: inventory-service-mock
+    environment:
+      - MOCKSERVER_PROPERTY_FILE=/config/mockserver.properties
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/inventory-service-expectations.json
+    ports:
+      - "8083:1080"
+    volumes:
+      - ./mocks/inventory-service:/config
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Monitoring & Observability
+  seq:
+    image: datalust/seq:latest
+    container_name: orderservice-seq
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QH+z4r9PI8+vCCg4TSfYXNOYrNELISmhONNFQNpNbhqhEg== # admin123
+    ports:
+      - "5341:80"
+    volumes:
+      - seq-data:/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Database Administration
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: orderservice-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: orderservice-mongo-express
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=admin123
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:admin123@mongodb:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    ports:
+      - "8084:8081"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+
+  # Redis Commander
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: orderservice-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:redis123
+    ports:
+      - "8085:8081"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+networks:
+  microservices-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres-data:
+    driver: local
+  mongodb-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  redis-data:
+    driver: local
+  seq-data:
+    driver: local
+  pgadmin-data:
+    driver: local 
