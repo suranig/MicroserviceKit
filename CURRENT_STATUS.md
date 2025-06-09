@@ -68,21 +68,29 @@ StandardService (standard) - BEFORE FIXES:
 - **Package versions**: Fixed non-existent packages (Microsoft.AspNetCore.RateLimiting)
 - **Project references**: Dynamic generation based on enabled modules
 
-### 🎯 TEST RESULTS - AFTER MAJOR FIXES:
+### ✅ COMPLETED (STEP 2.1 + 2.3):
+- **Hardcoded Examples Removed**: Deleted src/Domain/Microservice.Domain and tests/TestDDD.*
+- **Compilation Warnings Fixed**: CS8524 switch expression warnings, CS1998 async warnings
+- **Solution File Updated**: Removed references to deleted hardcoded projects
+
+### 🎯 TEST RESULTS - AFTER CLEANUP (STEP 2.1 + 2.3):
 ```
-✅ Domain project: Generated correctly with .csproj
-✅ API project: Generated correctly with dynamic project references
-✅ Tests project: Generated correctly with .csproj
-✅ Solution file: Complete with Global section, proper configurations
-✅ Package restore: All projects restore successfully (no more NuGet errors)
-❌ Compilation: 63 errors due to namespace mismatches for minimal level
+✅ Main solution: Compiles without warnings (9 → 0 warnings)
+✅ CLI commands: All working after cleanup
+✅ Project generation: Templates generate files correctly 
+❌ Generated project compilation: FAILS with 63 compilation errors
 ```
 
-### 🔄 IDENTIFIED MAJOR ISSUE:
-**Minimal level architecture inconsistency:**
-- Generates Domain + API + Tests projects (correct)
-- But API/Tests projects expect Application layer that doesn't exist for minimal
-- Need minimal-specific templates for API controllers and Tests
+### 🚨 **CRITICAL ISSUE DISCOVERED:**
+**Minimal level architecture is broken:**
+- ❌ API project tries to import Application.* namespaces that don't exist
+- ❌ Tests project tries to import Application.* namespaces that don't exist  
+- ❌ Controllers expect Application layer classes (commands/queries) not generated
+- ❌ Minimal should be SINGLE PROJECT but generates 3 separate projects
+
+**Root cause**: Minimal level uses standard templates instead of minimal-specific templates.
+
+**Impact**: Generated projects cannot compile - blocking core functionality.
 
 ---
 
