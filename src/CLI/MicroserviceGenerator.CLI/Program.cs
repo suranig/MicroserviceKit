@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Text;
 using System.Text.Json;
 using Microservice.Core.TemplateEngine.Configuration;
 using Microservice.Core.TemplateEngine.Abstractions;
@@ -396,30 +397,72 @@ static async Task GenerateProjectStructure(GenerationContext context)
     var config = context.Configuration;
     var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();
     var sourceDir = structure.SourceDirectory;
+    var decisions = ArchitectureRules.MakeDecisions(config);
     
-    // Generate solution file
-    var solutionContent = $@"
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
-MinimumVisualStudioVersion = 10.0.40219.1
-
-Project(""{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}"") = ""{sourceDir}"", ""{sourceDir}"", ""{{66448982-949A-4E9E-9EFA-CED092C125CB}}""
-EndProject
-
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""{sourceDir}/Api/{config.MicroserviceName}.Api/{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468ED}}""
-EndProject
-
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""{sourceDir}/Application/{config.MicroserviceName}.Application/{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D1}}""
-EndProject
-
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""{sourceDir}/Domain/{config.MicroserviceName}.Domain/{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
-EndProject
-
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""{sourceDir}/Infrastructure/{config.MicroserviceName}.Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D8}}""
-EndProject
-";
+    // Build solution content dynamically based on generated projects
+    var solutionBuilder = new StringBuilder();
+    solutionBuilder.AppendLine("Microsoft Visual Studio Solution File, Format Version 12.00");
+    solutionBuilder.AppendLine("# Visual Studio Version 17");
+    solutionBuilder.AppendLine("VisualStudioVersion = 17.0.31903.59");
+    solutionBuilder.AppendLine("MinimumVisualStudioVersion = 10.0.40219.1");
+    solutionBuilder.AppendLine();
     
+    // Add source folder
+    solutionBuilder.AppendLine($"Project(\"{{2150E333-8FDC-42A3-9474-1A3956D46DE8}}\") = \"{sourceDir}\", \"{sourceDir}\", \"{{66448982-949A-4E9E-9EFA-CED092C125CB}}\"");
+    solutionBuilder.AppendLine("EndProject");
+    solutionBuilder.AppendLine();
+    
+    // Add projects based on enabled modules
+    var projectId = 1;
+    
+    // Domain project (always present if DDD is enabled)
+    if (decisions.EnableDDD)
+    {
+        var domainPath = context.GetDomainProjectPath();
+        solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.Domain\", \"{domainPath}/{config.MicroserviceName}.Domain.csproj\", \"{{5C9F7570-3036-466E-B4EF-3307486F339{projectId++}}}\"");
+        solutionBuilder.AppendLine("EndProject");
+        solutionBuilder.AppendLine();
+    }
+    
+    // Application project (if CQRS enabled and not minimal)
+    if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
+    {
+        var applicationPath = context.GetApplicationProjectPath();
+        solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.Application\", \"{applicationPath}/{config.MicroserviceName}.Application.csproj\", \"{{F736B777-1905-48BC-9DF0-CB561A7BF9D{projectId++}}}\"");
+        solutionBuilder.AppendLine("EndProject");
+        solutionBuilder.AppendLine();
+    }
+    
+    // Infrastructure project (if enabled)
+    if (decisions.EnableInfrastructure)
+    {
+        var infrastructurePath = context.GetInfrastructureProjectPath();
+        solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.Infrastructure\", \"{infrastructurePath}/{config.MicroserviceName}.Infrastructure.csproj\", \"{{536A1C0B-964A-4830-A8F1-1B296CD5E2D{projectId++}}}\"");
+        solutionBuilder.AppendLine("EndProject");
+        solutionBuilder.AppendLine();
+    }
+    
+    // API project (always present)
+    var apiPath = context.GetApiProjectPath();
+    solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.Api\", \"{apiPath}/{config.MicroserviceName}.Api.csproj\", \"{{373FE1FF-A402-4860-83F9-CA5E902468E{projectId++}}}\"");
+    solutionBuilder.AppendLine("EndProject");
+    solutionBuilder.AppendLine();
+    
+    // Test projects
+    var testsPath = context.GetTestsProjectPath();
+    solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.Tests\", \"{testsPath}/{config.MicroserviceName}.Tests.csproj\", \"{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D{projectId++}}}\"");
+    solutionBuilder.AppendLine("EndProject");
+    solutionBuilder.AppendLine();
+    
+    var integrationTestsPath = context.GetIntegrationTestsProjectPath();
+    if (config.Features?.Testing?.Level == "integration" || config.Features?.Testing?.Level == "full" || config.Features?.Testing?.Level == "enterprise")
+    {
+        solutionBuilder.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{config.MicroserviceName}.IntegrationTests\", \"{integrationTestsPath}/{config.MicroserviceName}.IntegrationTests.csproj\", \"{{9C3B2D1E-075F-5941-B9G2-2C307BE6F3E{projectId++}}}\"");
+        solutionBuilder.AppendLine("EndProject");
+        solutionBuilder.AppendLine();
+    }
+    
+    var solutionContent = solutionBuilder.ToString();
     await context.WriteFileAsync($"{config.MicroserviceName}.sln", solutionContent);
     
     // Generate README

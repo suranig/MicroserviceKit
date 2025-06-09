@@ -1,4 +1,4 @@
-# TestService
+# TestProject
 
 Generated microservice using MicroserviceTemplateGenerator.
 
@@ -18,7 +18,7 @@ This microservice implements:
 ### Running locally
 ```bash
 dotnet restore
-dotnet run --project src/Api/TestService.Api
+dotnet run --project src/Api/TestProject.Api
 ```
 
 ## API Documentation
@@ -27,5 +27,4 @@ The API will be available at: http://localhost:5000/swagger
 
 ## Generated Aggregates
 
-- **Order**: CustomerId (Guid), TotalAmount (decimal), Status (string)
-- **Customer**: Email (string), Name (string)
+- **User**: Email (string), Name (string)

@@ -10,8 +10,11 @@ public class RestApiModule : ITemplateModule
 
     public bool IsEnabled(TemplateConfiguration config)
     {
-        var apiStyle = config.Features?.Api?.Style?.ToLowerInvariant();
-        return apiStyle == "controllers" || apiStyle == "both" || apiStyle == "auto";
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        // API module is always enabled - it generates either controllers or minimal API based on decisions
+        return decisions.ApiStyle == ApiStyle.Controllers || 
+               decisions.ApiStyle == ApiStyle.MinimalApi || 
+               decisions.ApiStyle == ApiStyle.Both;
     }
 
     public async Task GenerateAsync(GenerationContext context)
@@ -20,22 +23,22 @@ public class RestApiModule : ITemplateModule
         var outputPath = context.GetApiProjectPath();
 
         // Create project structure
-        await CreateProjectStructureAsync(outputPath, config);
+        await CreateProjectStructureAsync(outputPath, config, context);
 
         // Generate controllers for each aggregate
         if (config.Domain?.Aggregates != null)
         {
             foreach (var aggregate in config.Domain.Aggregates)
             {
-                await GenerateControllerAsync(outputPath, config, aggregate);
+                await GenerateControllerAsync(outputPath, config, aggregate, context);
             }
         }
 
         // Generate common API infrastructure
-        await GenerateApiInfrastructureAsync(outputPath, config);
+        await GenerateApiInfrastructureAsync(outputPath, config, context);
     }
 
-    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config, GenerationContext context)
     {
         Directory.CreateDirectory(outputPath);
         Directory.CreateDirectory(Path.Combine(outputPath, "Controllers"));
@@ -46,28 +49,27 @@ public class RestApiModule : ITemplateModule
 
         // Generate .csproj file
         var csprojContent = GenerateProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, $"{config.MicroserviceName}.Api.csproj"), csprojContent);
+        await context.WriteFileAsync($"{outputPath}/{config.MicroserviceName}.Api.csproj", csprojContent);
 
         // Generate Program.cs
         var programContent = GenerateProgramFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "Program.cs"), programContent);
+        await context.WriteFileAsync($"{outputPath}/Program.cs", programContent);
 
         // Generate appsettings.json
         var appSettingsContent = GenerateAppSettingsFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "appsettings.json"), appSettingsContent);
+        await context.WriteFileAsync($"{outputPath}/appsettings.json", appSettingsContent);
     }
 
-    private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var controllerContent = GenerateController(config, aggregate);
-        var controllerPath = Path.Combine(outputPath, "Controllers", $"{aggregate.Name}Controller.cs");
-        await File.WriteAllTextAsync(controllerPath, controllerContent);
+        await context.WriteFileAsync($"{outputPath}/Controllers/{aggregate.Name}Controller.cs", controllerContent);
 
         // Generate request/response models
-        await GenerateApiModelsAsync(outputPath, config, aggregate);
+        await GenerateApiModelsAsync(outputPath, config, aggregate, context);
     }
 
-    private async Task GenerateApiModelsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateApiModelsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var modelsPath = Path.Combine(outputPath, "Models");
 
@@ -95,7 +97,7 @@ public class RestApiModule : ITemplateModule
             pagedResponseContent);
     }
 
-    private async Task GenerateApiInfrastructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateApiInfrastructureAsync(string outputPath, TemplateConfiguration config, GenerationContext context)
     {
         // Generate global exception filter
         var exceptionFilterContent = GenerateGlobalExceptionFilter(config);

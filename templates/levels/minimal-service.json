@@ -16,16 +16,4 @@
       }
     ]
   }
-}
-
-// Wygeneruje:
-// UserService/
-// ├── UserService.sln  
-// ├── src/UserService/
-// │   ├── Domain/User.cs
-// │   ├── Application/CreateUser.cs
-// │   ├── Application/UpdateUserEmail.cs
-// │   ├── Endpoints/UserEndpoints.cs
-// │   ├── Program.cs
-// │   └── UserService.csproj
-// └── tests/UserService.Tests/ 
+} 
