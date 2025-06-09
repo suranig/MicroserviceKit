@@ -462,6 +462,36 @@ static async Task GenerateProjectStructure(GenerationContext context)
         solutionBuilder.AppendLine();
     }
     
+    // Add Global section
+    solutionBuilder.AppendLine("Global");
+    solutionBuilder.AppendLine("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution");
+    solutionBuilder.AppendLine("\t\tDebug|Any CPU = Debug|Any CPU");
+    solutionBuilder.AppendLine("\t\tRelease|Any CPU = Release|Any CPU");
+    solutionBuilder.AppendLine("\tEndGlobalSection");
+    solutionBuilder.AppendLine("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution");
+    
+    // Add project configurations for each project
+    var projectIds = new[]
+    {
+        "{5C9F7570-3036-466E-B4EF-3307486F3391}", // Domain
+        "{373FE1FF-A402-4860-83F9-CA5E902468E2}", // Api  
+        "{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D3}" // Tests
+    };
+    
+    foreach (var id in projectIds)
+    {
+        solutionBuilder.AppendLine($"\t\t{id}.Debug|Any CPU.ActiveCfg = Debug|Any CPU");
+        solutionBuilder.AppendLine($"\t\t{id}.Debug|Any CPU.Build.0 = Debug|Any CPU");
+        solutionBuilder.AppendLine($"\t\t{id}.Release|Any CPU.ActiveCfg = Release|Any CPU");
+        solutionBuilder.AppendLine($"\t\t{id}.Release|Any CPU.Build.0 = Release|Any CPU");
+    }
+    
+    solutionBuilder.AppendLine("\tEndGlobalSection");
+    solutionBuilder.AppendLine("\tGlobalSection(SolutionProperties) = preSolution");
+    solutionBuilder.AppendLine("\t\tHideSolutionNode = FALSE");
+    solutionBuilder.AppendLine("\tEndGlobalSection");
+    solutionBuilder.AppendLine("EndGlobal");
+    
     var solutionContent = solutionBuilder.ToString();
     await context.WriteFileAsync($"{config.MicroserviceName}.sln", solutionContent);
     
