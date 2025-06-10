@@ -49,7 +49,7 @@ public class DDDModule : ITemplateModule
 
         // Generate .csproj file
         var csprojContent = GenerateDomainProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(domainPath, $"{config.MicroserviceName}.Domain.csproj"), csprojContent);
+        await context.WriteFileAsync($"{domainPath}/{config.MicroserviceName}.Domain.csproj", csprojContent);
     }
 
     private string GenerateDomainProjectFile(TemplateConfiguration config)

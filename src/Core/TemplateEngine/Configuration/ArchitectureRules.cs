@@ -61,7 +61,8 @@ public static class ArchitectureRules
             {
                 ComplexityLevel.Simple => ArchitectureLevel.Minimal,
                 ComplexityLevel.Medium => ArchitectureLevel.Standard,
-                ComplexityLevel.Complex => ArchitectureLevel.Enterprise
+                ComplexityLevel.Complex => ArchitectureLevel.Enterprise,
+                _ => ArchitectureLevel.Standard // default
             }
         };
     }
@@ -72,7 +73,8 @@ public static class ArchitectureRules
         {
             ArchitectureLevel.Minimal => ProjectStructure.SingleProject,
             ArchitectureLevel.Standard => ProjectStructure.ThreeLayer,
-            ArchitectureLevel.Enterprise => ProjectStructure.FourLayer
+            ArchitectureLevel.Enterprise => ProjectStructure.FourLayer,
+            _ => ProjectStructure.ThreeLayer // default
         };
     }
     

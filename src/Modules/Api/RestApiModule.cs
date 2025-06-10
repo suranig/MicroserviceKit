@@ -10,8 +10,11 @@ public class RestApiModule : ITemplateModule
 
     public bool IsEnabled(TemplateConfiguration config)
     {
-        var apiStyle = config.Features?.Api?.Style?.ToLowerInvariant();
-        return apiStyle == "controllers" || apiStyle == "both" || apiStyle == "auto";
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        // API module is always enabled - it generates either controllers or minimal API based on decisions
+        return decisions.ApiStyle == ApiStyle.Controllers || 
+               decisions.ApiStyle == ApiStyle.MinimalApi || 
+               decisions.ApiStyle == ApiStyle.Both;
     }
 
     public async Task GenerateAsync(GenerationContext context)
@@ -20,22 +23,22 @@ public class RestApiModule : ITemplateModule
         var outputPath = context.GetApiProjectPath();
 
         // Create project structure
-        await CreateProjectStructureAsync(outputPath, config);
+        await CreateProjectStructureAsync(outputPath, config, context);
 
         // Generate controllers for each aggregate
         if (config.Domain?.Aggregates != null)
         {
             foreach (var aggregate in config.Domain.Aggregates)
             {
-                await GenerateControllerAsync(outputPath, config, aggregate);
+                await GenerateControllerAsync(outputPath, config, aggregate, context);
             }
         }
 
         // Generate common API infrastructure
-        await GenerateApiInfrastructureAsync(outputPath, config);
+        await GenerateApiInfrastructureAsync(outputPath, config, context);
     }
 
-    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config, GenerationContext context)
     {
         Directory.CreateDirectory(outputPath);
         Directory.CreateDirectory(Path.Combine(outputPath, "Controllers"));
@@ -46,28 +49,27 @@ public class RestApiModule : ITemplateModule
 
         // Generate .csproj file
         var csprojContent = GenerateProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, $"{config.MicroserviceName}.Api.csproj"), csprojContent);
+        await context.WriteFileAsync($"{outputPath}/{config.MicroserviceName}.Api.csproj", csprojContent);
 
         // Generate Program.cs
         var programContent = GenerateProgramFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "Program.cs"), programContent);
+        await context.WriteFileAsync($"{outputPath}/Program.cs", programContent);
 
         // Generate appsettings.json
         var appSettingsContent = GenerateAppSettingsFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "appsettings.json"), appSettingsContent);
+        await context.WriteFileAsync($"{outputPath}/appsettings.json", appSettingsContent);
     }
 
-    private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var controllerContent = GenerateController(config, aggregate);
-        var controllerPath = Path.Combine(outputPath, "Controllers", $"{aggregate.Name}Controller.cs");
-        await File.WriteAllTextAsync(controllerPath, controllerContent);
+        await context.WriteFileAsync($"{outputPath}/Controllers/{aggregate.Name}Controller.cs", controllerContent);
 
         // Generate request/response models
-        await GenerateApiModelsAsync(outputPath, config, aggregate);
+        await GenerateApiModelsAsync(outputPath, config, aggregate, context);
     }
 
-    private async Task GenerateApiModelsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateApiModelsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var modelsPath = Path.Combine(outputPath, "Models");
 
@@ -95,7 +97,7 @@ public class RestApiModule : ITemplateModule
             pagedResponseContent);
     }
 
-    private async Task GenerateApiInfrastructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateApiInfrastructureAsync(string outputPath, TemplateConfiguration config, GenerationContext context)
     {
         // Generate global exception filter
         var exceptionFilterContent = GenerateGlobalExceptionFilter(config);
@@ -124,6 +126,33 @@ public class RestApiModule : ITemplateModule
 
     private string GenerateProjectFile(TemplateConfiguration config)
     {
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        
+        // Generate project references based on enabled modules
+        var projectReferences = new List<string>();
+        
+        if (decisions.EnableDDD)
+        {
+            projectReferences.Add($@"    <ProjectReference Include=""..\..\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />");
+        }
+        
+        if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
+        {
+            projectReferences.Add($@"    <ProjectReference Include=""..\..\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />");
+        }
+        
+        if (decisions.EnableInfrastructure)
+        {
+            projectReferences.Add($@"    <ProjectReference Include=""..\..\Infrastructure\{config.MicroserviceName}.Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />");
+        }
+
+        var projectReferencesSection = projectReferences.Any() 
+            ? $@"
+  <ItemGroup>
+{string.Join("\n", projectReferences)}
+  </ItemGroup>"
+            : "";
+
         return $@"<Project Sdk=""Microsoft.NET.Sdk.Web"">
 
   <PropertyGroup>
@@ -135,41 +164,65 @@ public class RestApiModule : ITemplateModule
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.AspNetCore.OpenApi"" Version=""8.0.16"" />
+    <PackageReference Include=""Microsoft.AspNetCore.OpenApi"" Version=""8.0.0"" />
     <PackageReference Include=""Swashbuckle.AspNetCore"" Version=""6.6.2"" />
     <PackageReference Include=""WolverineFx"" Version=""3.5.0"" />
     <PackageReference Include=""FluentValidation.AspNetCore"" Version=""11.3.0"" />
     <PackageReference Include=""Serilog.AspNetCore"" Version=""8.0.0"" />
-    <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.16"" />
-    <PackageReference Include=""Microsoft.AspNetCore.RateLimiting"" Version=""8.0.16"" />
+    <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.ResponseCompression"" Version=""2.2.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning"" Version=""5.1.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer"" Version=""5.1.0"" />
-    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"" Version=""8.0.16"" />
+    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks"" Version=""8.0.0"" />
     <PackageReference Include=""AspNetCore.HealthChecks.UI.Client"" Version=""8.0.1"" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include=""..\..\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />
-    <ProjectReference Include=""..\..\Infrastructure\{config.MicroserviceName}.Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />
-  </ItemGroup>
+  </ItemGroup>{projectReferencesSection}
 
 </Project>";
     }
 
     private string GenerateProgramFile(TemplateConfiguration config)
     {
+        var decisions = ArchitectureRules.MakeDecisions(config);
         var authConfig = config.Features?.Api?.Authentication?.ToLowerInvariant() == "jwt" 
             ? GenerateJwtConfiguration() 
             : "";
 
-        return $@"using {config.Namespace}.Application.Extensions;
-using {config.Namespace}.Infrastructure.Extensions;
-using {config.Namespace}.Api.Extensions;
-using {config.Namespace}.Api.Filters;
-using {config.Namespace}.Api.Middleware;
-using Wolverine;
-using Serilog;
+        // Generate using statements based on enabled modules
+        var usingStatements = new List<string>
+        {
+            $"using {config.Namespace}.Api.Extensions;",
+            $"using {config.Namespace}.Api.Filters;",
+            $"using {config.Namespace}.Api.Middleware;",
+            "using Wolverine;",
+            "using Serilog;"
+        };
+
+        if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
+        {
+            usingStatements.Add($"using {config.Namespace}.Application.Extensions;");
+        }
+
+        if (decisions.EnableInfrastructure)
+        {
+            usingStatements.Add($"using {config.Namespace}.Infrastructure.Extensions;");
+        }
+
+        // Generate service registrations based on enabled modules
+        var serviceRegistrations = new List<string>();
+
+        if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
+        {
+            serviceRegistrations.Add("builder.Services.AddApplication();");
+        }
+
+        if (decisions.EnableInfrastructure)
+        {
+            serviceRegistrations.Add("builder.Services.AddInfrastructure(builder.Configuration);");
+        }
+
+        var allServiceRegistrations = string.Join("\n", serviceRegistrations);
+
+        return $@"{string.Join("\n", usingStatements)}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -191,8 +244,7 @@ builder.Services.AddSwaggerGen(c =>
 }});
 
 // Add application layers
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+{allServiceRegistrations}
 
 // Add API extensions
 builder.Services.AddApiExtensions(builder.Configuration);
@@ -234,9 +286,6 @@ app.UseMiddleware<CorrelationMiddleware>();
 
 app.UseCors();
 
-// Rate limiting
-app.UseRateLimiter();
-
 {(config.Features?.Api?.Authentication?.ToLowerInvariant() == "jwt" ? "app.UseAuthentication();\napp.UseAuthorization();" : "")}
 
 // Health checks
@@ -250,8 +299,8 @@ app.MapHealthChecks(""/health/live"", new Microsoft.AspNetCore.Diagnostics.Healt
     Predicate = _ => false
 }});
 
-// Add rate limiting to controllers
-app.MapControllers().RequireRateLimiting(""ApiPolicy"");
+// Map controllers
+app.MapControllers();
 
 // Metrics endpoint for Prometheus
 app.MapGet(""/metrics"", () => ""# Metrics endpoint for monitoring"");

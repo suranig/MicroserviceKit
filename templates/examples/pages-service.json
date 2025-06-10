@@ -1,0 +1,125 @@
+{
+  "microserviceName": "PagesService",
+  "rootNamespace": "PagesService",
+  "architecture": {
+    "level": "enterprise",
+    "patterns": {
+      "ddd": "enabled",
+      "cqrs": "enabled",
+      "eventSourcing": "enabled"
+    }
+  },
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Page",
+        "properties": [
+          { "name": "Id", "type": "Guid" },
+          { "name": "Title", "type": "string" },
+          { "name": "Slug", "type": "string" },
+          { "name": "Content", "type": "string" },
+          { "name": "Status", "type": "string" },
+          { "name": "CreatedAt", "type": "DateTime" },
+          { "name": "UpdatedAt", "type": "DateTime" }
+        ],
+        "entities": [
+          {
+            "name": "Component",
+            "properties": [
+              { "name": "Id", "type": "Guid" },
+              { "name": "Type", "type": "string" },
+              { "name": "Content", "type": "string" },
+              { "name": "Order", "type": "int" },
+              { "name": "Settings", "type": "Dictionary<string,string>" }
+            ]
+          }
+        ],
+        "events": [
+          "PageCreated",
+          "PageUpdated",
+          "PageDeleted",
+          "ComponentAdded",
+          "ComponentRemoved",
+          "ComponentUpdated"
+        ],
+        "operations": [
+          "Create",
+          "Update",
+          "Delete",
+          "AddComponent",
+          "RemoveComponent",
+          "UpdateComponent",
+          "ReorderComponents"
+        ]
+      }
+    ]
+  },
+  "features": {
+    "api": {
+      "style": "controllers",
+      "authentication": "jwt",
+      "versioning": "enabled",
+      "swagger": "enabled"
+    },
+    "database": {
+      "writeModel": {
+        "provider": "postgresql",
+        "enableMigrations": true,
+        "enableAuditing": true,
+        "enableSoftDelete": true
+      },
+      "readModel": {
+        "provider": "mongodb",
+        "enableProjections": true,
+        "syncStrategy": "eventual"
+      },
+      "cache": {
+        "enabled": true,
+        "provider": "redis",
+        "defaultTtlMinutes": 60
+      }
+    },
+    "messaging": {
+      "enabled": true,
+      "broker": "rabbitmq"
+    },
+    "externalServices": {
+      "enabled": true,
+      "services": [
+        {
+          "name": "ContentAPI",
+          "type": "http",
+          "baseUrl": "https://api.content-service.com",
+          "resilience": {
+            "retry": {
+              "enabled": true,
+              "maxAttempts": 3,
+              "strategy": "exponential",
+              "baseDelayMs": 1000
+            },
+            "circuitBreaker": {
+              "enabled": true,
+              "failureThreshold": 5,
+              "timeoutMs": 30000,
+              "recoveryTimeMs": 60000
+            },
+            "timeout": {
+              "enabled": true,
+              "defaultTimeoutMs": 30000
+            }
+          }
+        }
+      ]
+    }
+  },
+  "testing": {
+    "unitTests": "enabled",
+    "integrationTests": "enabled",
+    "e2eTests": "enabled"
+  },
+  "deployment": {
+    "docker": "enabled",
+    "kubernetes": "enabled",
+    "healthChecks": "enabled"
+  }
+} 

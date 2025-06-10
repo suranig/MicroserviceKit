@@ -170,16 +170,6 @@
   - [ ] Multiple sinks
   - [ ] Request correlation
 
-#### 5.2 Monitoring
-- [ ] **Health Checks**
-  - [ ] Application health
-  - [ ] Database health
-  - [ ] External service health
-
-- [ ] **Metrics**
-  - [ ] Prometheus metrics
-  - [ ] Custom counters
-  - [ ] Performance metrics
 
 ### 🎨 **6. Advanced Features**
 **Priorytet: NISKI**
@@ -205,7 +195,7 @@
 ### Struktura Modułów
 ```
 src/Modules/
-├── DDD/                    ✅ GOTOWE
+├── Domain/                    ✅ GOTOWE
 ├── Application/            ✅ GOTOWE  
 ├── Api/                    ❌ DO ZROBIENIA
 │   ├── RestApiModule.cs
@@ -221,10 +211,10 @@ src/Modules/
 │   └── ExternalServicesModule.cs
 ├── Deployment/             ❌ DO ZROBIENIA
 │   ├── DockerModule.cs
-│   └── KubernetesModule.cs
+│   └── KubernetesModule.cs [na razie nie]
 └── Observability/          ❌ DO ZROBIENIA
     ├── LoggingModule.cs
-    └── MonitoringModule.cs
+    
 ```
 
 ### SOLID Principles w Generatorze
@@ -264,7 +254,7 @@ src/Modules/
    - [ ] **mysql.Dockerfile** - jeśli `config.Features.Persistence.WriteModel == "mysql"`
    - [ ] **docker-compose.yml** - orkiestracja wszystkich wybranych serwisów
 
-### ☸️ **KUBERNETES (Sprint 4)**
+### ☸️ **KUBERNETES (Sprint 4)** 
 1. [ ] **KubernetesModule** - TYLKO dla mikrousługi:
    - [ ] **Deployment** z replikami i resource limits
    - [ ] **HPA** z CPU/Memory metrics

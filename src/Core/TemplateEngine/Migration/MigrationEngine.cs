@@ -220,7 +220,7 @@ public class MigrationEngine : IMigrationEngine
         });
     }
 
-    private async Task RollbackStepAsync(MigrationStep step, MigrationPlan plan)
+    private Task RollbackStepAsync(MigrationStep step, MigrationPlan plan)
     {
         // Implement step-specific rollback
         switch (step)
@@ -233,6 +233,8 @@ public class MigrationEngine : IMigrationEngine
                 break;
             // ... other rollback implementations
         }
+        
+        return Task.CompletedTask;
     }
 
     private string GenerateCsprojContent(string projectType, MigrationPlan plan)
