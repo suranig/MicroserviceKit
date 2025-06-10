@@ -1,4 +1,7 @@
 using Microservice.Core.TemplateEngine.Configuration;
+using System.Threading.Tasks;
+using System.IO;
+using System.Collections.Generic;
 
 namespace Microservice.Core.TemplateEngine.Abstractions;
 
@@ -36,45 +39,64 @@ public class GenerationContext
     // Helper methods for generating project paths
     public string GetDomainProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.DomainProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.DomainProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "src/Domain");
     }
 
     public string GetApplicationProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.ApplicationProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.ApplicationProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "src/Application");
     }
 
     public string GetInfrastructureProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.InfrastructureProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.InfrastructureProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "src/Infrastructure");
     }
 
     public string GetApiProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.ApiProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.ApiProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "src/Api");
     }
 
     public string GetTestsProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.TestsProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.TestsProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "tests");
     }
 
     public string GetIntegrationTestsProjectPath()
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
-        return ResolvePath(structure.IntegrationTestsProjectPath);
+        var structure = Configuration.ProjectStructure;
+        return structure != null 
+            ? ResolvePath(structure.IntegrationTestsProjectPath) 
+            : Path.Combine(Configuration.OutputPath, "tests");
+    }
+
+    public string GetDockerProjectPath()
+    {
+        return Path.Combine(Configuration.OutputPath, "docker");
     }
 
     private string ResolvePath(string pathTemplate)
     {
-        var structure = Configuration.ProjectStructure ?? new ProjectStructureConfiguration();
+        var structure = Configuration.ProjectStructure;
+        var sourceDir = structure?.SourceDirectory ?? "src";
+        
         return pathTemplate
-            .Replace("{SourceDirectory}", structure.SourceDirectory)
+            .Replace("{SourceDirectory}", sourceDir)
             .Replace("{MicroserviceName}", Configuration.MicroserviceName);
     }
 }
