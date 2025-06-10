@@ -135,7 +135,6 @@ public class ObservabilityConfiguration
 public class DeploymentConfiguration
 {
     public string? Docker { get; set; } = "auto"; // auto | enabled | disabled
-    public string? Kubernetes { get; set; } = "disabled";
     public string? HealthChecks { get; set; } = "auto";
 }
 
