@@ -20,3 +20,4 @@ nupkg/
 test_cli/
 **/test_cli/
 
+.cursor/

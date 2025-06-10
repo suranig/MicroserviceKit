@@ -5,13 +5,11 @@ All notable changes to MicroserviceKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Planned] - v0.3.0
+## [Unreleased] - v0.3.0
 
 ### 📨 **Messaging & Event-Driven Architecture**
 - **PLANNED**: `MessagingModule.cs` - Complete event-driven messaging infrastructure
 - **PLANNED**: MassTransit integration (primary option) with RabbitMQ transport
-- **PLANNED**: Wolverine integration (modern alternative) with source generators
-- **PLANNED**: CAP integration (outbox pattern) for distributed transactions
 - **PLANNED**: Domain events and integration events generation
 - **PLANNED**: Publishers and consumers with error handling and retry policies
 - **PLANNED**: Docker Compose with RabbitMQ broker
@@ -19,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PLANNED**: Event sourcing patterns (optional)
 - **PLANNED**: Saga patterns for long-running processes
 
-## [Unreleased] - v0.2.0
+## [Released] - v0.2.0
 
 ### 🚀 Major Features Added
 
@@ -47,13 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW**: Test configuration and `GlobalUsings`
 
 #### Phase 3: Containerization & Deployment Module
-- **NEW**: `DeploymentModule.cs` - Complete Docker and Kubernetes support
+- **NEW**: `DeploymentModule.cs` - Complete Docker support
 - **NEW**: Production-ready Dockerfile with multi-stage build
-- **NEW**: Docker Compose with PostgreSQL/SQL Server, Redis, Prometheus monitoring
-- **NEW**: Kubernetes manifests: Deployment, Service, Ingress, HPA, PodDisruptionBudget
-- **NEW**: Security features: resource limits, security contexts, network policies
+- **NEW**: Docker Compose with PostgreSQL/SQL Server, Redis
+- **NEW**: Security features: resource limits, non-root users
 - **NEW**: Deployment scripts: `build.sh`, `deploy.sh`
-- **NEW**: Monitoring configuration for Prometheus and Grafana
 
 #### Windows Development Support
 - **NEW**: `Dockerfile.windows` for local Windows development
@@ -80,7 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW**: Comprehensive health checks (`/health`, `/health/ready`, `/health/live`)
 - **NEW**: Database health checks
 - **NEW**: Memory and disk space health checks
-- **NEW**: Prometheus metrics endpoint (`/metrics`)
 - **NEW**: Custom health check responses
 
 #### Security Improvements
@@ -120,8 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW**: Development environment (`dev`, `dev-stop`, `dev-logs`)
 - **NEW**: Database migrations (`db-migrate`, `db-migration`)
 - **NEW**: Release automation (`release-patch`, `release-minor`, `release-major`)
-- **NEW**: Health monitoring (`health`, `logs`, `metrics`)
-- **NEW**: Kubernetes deployment (`k8s-deploy`, `k8s-status`, `k8s-logs`)
+- **NEW**: Health monitoring (`health`, `logs`)
 
 #### Version Management
 - **NEW**: Automatic semantic versioning
@@ -177,16 +171,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW**: Health checks for load balancers
 - **NEW**: Graceful shutdown handling
 - **NEW**: Resource limits and requests
-- **NEW**: Auto-scaling configuration (HPA)
 - **NEW**: Monitoring and alerting setup
 
 ### 📊 Monitoring & Observability
-
-#### Metrics & Monitoring
-- **NEW**: Prometheus metrics collection
-- **NEW**: Grafana dashboard configuration
-- **NEW**: Custom application metrics
-- **NEW**: Performance counters
 
 #### Logging
 - **ENHANCED**: Structured logging configuration
@@ -199,7 +186,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UPDATED**: .NET 8.0.16 (latest with security fixes)
 - **NEW**: TestContainers for integration testing
 - **NEW**: Bogus for test data generation
-- **NEW**: Prometheus metrics libraries
 - **NEW**: Health check libraries
 
 #### Project Structure
@@ -208,6 +194,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UPDATED**: CLI project references
 
 ### 🐛 Bug Fixes
+
+#### Core Engine Fixes
+- **FIXED**: Missing NuGet dependencies in TemplateEngine.csproj
+- **FIXED**: Circular references between modules and abstractions
+- **FIXED**: Duplicate ProjectStructureConfiguration class definitions
+- **FIXED**: GenerationContext issues with configuration handling
+- **FIXED**: MigrationEngine path handling and template application
+- **FIXED**: ApiModule implementation of ITemplateModule interface
+- **FIXED**: ApplicationModule CQRS file generation
+- **FIXED**: Proper namespace organization in all modules
+- **FIXED**: DomainModule entity and aggregate generation
+- **FIXED**: TemplateEngine orchestration with MicroserviceGenerator
+- **FIXED**: CLI Program.cs integration with new TemplateEngine architecture
+- **FIXED**: Template discovery and application process
 
 #### Compilation Issues
 - **FIXED**: Missing DeploymentConfiguration.Level property references
@@ -225,7 +225,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Generated Documentation
 - **NEW**: Comprehensive README.md for each microservice
 - **NEW**: Docker usage documentation
-- **NEW**: Kubernetes deployment guides
 - **NEW**: Development setup instructions
 
 #### Code Documentation
@@ -249,12 +248,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Modules Added
 1. **IntegrationTestModule** - Complete integration testing infrastructure
-2. **DeploymentModule** - Docker, Kubernetes, and deployment automation
+2. **DeploymentModule** - Docker and deployment automation
 
 ### Files Generated Per Microservice
 - **Project Files**: `.gitignore`, `.dockerignore`, `Makefile`, `VERSION`, `README.md`
 - **Docker Files**: `Dockerfile`, `Dockerfile.windows`, `docker-compose.yml`, `docker-compose.windows.yml`
-- **Kubernetes**: Deployment, Service, Ingress, HPA, ConfigMap, Secret manifests
 - **Scripts**: `build.sh`, `deploy.sh`, health check scripts
 - **Tests**: Integration tests, API tests, database tests, end-to-end tests
 
@@ -276,11 +274,6 @@ make docker-build           # Build Linux image
 make docker-build-windows   # Build Windows image
 make docker-run            # Run container
 
-# Kubernetes
-make k8s-deploy      # Deploy to Kubernetes
-make k8s-status      # Check status
-make k8s-logs        # View logs
-
 # Release
 make release-patch   # Version + Build + Push
 make git-tag        # Create git tag
@@ -288,8 +281,7 @@ make git-tag        # Create git tag
 
 ### Production Ready Features
 - ✅ **Security**: Rate limiting, security headers, JWT auth
-- ✅ **Monitoring**: Health checks, Prometheus metrics, logging
-- ✅ **Scalability**: Kubernetes HPA, resource limits
+- ✅ **Monitoring**: Health checks, structured logging
 - ✅ **Reliability**: Graceful shutdown, health probes
 - ✅ **Development**: Hot reload, test containers, debugging
 - ✅ **CI/CD**: Docker builds, automated deployment, versioning
