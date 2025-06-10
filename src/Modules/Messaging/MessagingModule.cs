@@ -54,20 +54,20 @@ public class MessagingModule : ITemplateModule
 
         // Generate RabbitMQ configuration
         var rabbitMQConfig = GenerateRabbitMQConfiguration(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Messaging", "Configuration", "RabbitMQConfiguration.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Messaging", "Configuration", "RabbitMQConfiguration.cs"),
             rabbitMQConfig);
 
         // Generate event publisher
         var eventPublisher = GenerateEventPublisher(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Messaging", "Publishers", "DomainEventPublisher.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Messaging", "Publishers", "DomainEventPublisher.cs"),
             eventPublisher);
 
         // Generate outbox repository
         var outboxRepository = GenerateOutboxRepository(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Messaging", "Publishers", "OutboxRepository.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Messaging", "Publishers", "OutboxRepository.cs"),
             outboxRepository);
     }
 
@@ -86,15 +86,15 @@ public class MessagingModule : ITemplateModule
         foreach (var eventName in events)
         {
             var eventContent = GenerateDomainEvent(config, aggregate, eventName);
-            await File.WriteAllTextAsync(
-                Path.Combine(domainPath, "Events", $"{eventName}.cs"),
+            await context.WriteFileAsync(
+                Path.Combine("Events", $"{eventName}.cs"),
                 eventContent);
         }
 
         // Generate integration events
         var integrationEventContent = GenerateIntegrationEvent(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(domainPath, "Events", $"{aggregate.Name}IntegrationEvent.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Events", $"{aggregate.Name}IntegrationEvent.cs"),
             integrationEventContent);
     }
 
@@ -118,15 +118,15 @@ public class MessagingModule : ITemplateModule
         foreach (var eventName in events)
         {
             var handlerContent = GenerateEventHandler(config, aggregate, eventName);
-            await File.WriteAllTextAsync(
-                Path.Combine(eventHandlersPath, $"{eventName}Handler.cs"),
+            await context.WriteFileAsync(
+                Path.Combine(aggregate.Name, "EventHandlers", $"{eventName}Handler.cs"),
                 handlerContent);
         }
 
         // Generate read model updater
         var readModelUpdater = GenerateReadModelUpdater(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(eventHandlersPath, $"{aggregate.Name}ReadModelUpdater.cs"),
+        await context.WriteFileAsync(
+            Path.Combine(aggregate.Name, "EventHandlers", $"{aggregate.Name}ReadModelUpdater.cs"),
             readModelUpdater);
     }
 
@@ -140,20 +140,20 @@ public class MessagingModule : ITemplateModule
 
         // Generate event dispatcher interface
         var eventDispatcherInterface = GenerateEventDispatcherInterface(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(applicationPath, "Common", "Events", "IEventDispatcher.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Common", "Events", "IEventDispatcher.cs"),
             eventDispatcherInterface);
 
         // Generate event dispatcher implementation
         var eventDispatcher = GenerateEventDispatcher(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(applicationPath, "Common", "Events", "EventDispatcher.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Common", "Events", "EventDispatcher.cs"),
             eventDispatcher);
 
         // Generate event handler interface
         var eventHandlerInterface = GenerateEventHandlerInterface(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(applicationPath, "Common", "Events", "IEventHandler.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Common", "Events", "IEventHandler.cs"),
             eventHandlerInterface);
     }
 
@@ -164,14 +164,14 @@ public class MessagingModule : ITemplateModule
 
         // Generate outbox entity
         var outboxEntity = GenerateOutboxEntity(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Messaging", "OutboxEvent.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Messaging", "OutboxEvent.cs"),
             outboxEntity);
 
         // Generate outbox processor
         var outboxProcessor = GenerateOutboxProcessor(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Messaging", "OutboxProcessor.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Messaging", "OutboxProcessor.cs"),
             outboxProcessor);
     }
 
@@ -182,8 +182,8 @@ public class MessagingModule : ITemplateModule
 
         // Generate messaging extensions
         var messagingExtensions = GenerateMessagingExtensions(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(infrastructurePath, "Extensions", "MessagingExtensions.cs"),
+        await context.WriteFileAsync(
+            Path.Combine("Extensions", "MessagingExtensions.cs"),
             messagingExtensions);
     }
 
@@ -946,7 +946,7 @@ using {config.Namespace}.Infrastructure.Messaging;";
         services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
         services.AddScoped<IOutboxRepository, OutboxRepository>();
         services.AddHostedService<OutboxProcessor>();
-        services.AddScoped<IEventDispatcher, EventDispatcher>();";
+        services.AddScoped<IEventDispatcher, EventDispatcher>;";
 
                 var returnIndex = content.LastIndexOf("return services;");
                 if (returnIndex != -1)
