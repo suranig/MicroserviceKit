@@ -305,12 +305,10 @@ static async Task<TemplateConfiguration> RunInteractiveMode(string name)
     // Deployment Configuration
     Console.WriteLine("\n🚀 Deployment Configuration:");
     var enableDocker = PromptYesNo("Generate Docker configuration?", true);
-    var enableKubernetes = PromptYesNo("Generate Kubernetes configuration?", false);
     
     config.Features.Deployment = new DeploymentConfiguration
     {
         Docker = enableDocker ? "enabled" : "disabled",
-        Kubernetes = enableKubernetes ? "enabled" : "disabled",
         HealthChecks = "auto"
     };
     
@@ -360,7 +358,7 @@ static TemplateConfiguration CreateDefaultConfig(string name)
             Deployment = new DeploymentConfiguration
             {
                 Docker = "auto",
-                Kubernetes = "disabled"
+                HealthChecks = "auto"
             }
         }
     };
@@ -379,8 +377,7 @@ static async Task GenerateMicroservice(TemplateConfiguration config)
         new Microservice.Modules.Messaging.MessagingModule(),
         new Microservice.Modules.ReadModels.ReadModelsModule(),
         new Microservice.Modules.Tests.UnitTestModule(),
-        new Microservice.Modules.Tests.IntegrationTestModule(),
-        new Microservice.Modules.Deployment.DeploymentModule()
+        new Microservice.Modules.Tests.IntegrationTestModule()
     };
     
     foreach (var module in modules.Where(m => m.IsEnabled(config)))
