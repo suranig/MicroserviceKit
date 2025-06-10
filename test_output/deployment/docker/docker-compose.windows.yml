@@ -1,0 +1,20 @@
+# Windows Docker Compose for local development only
+version: '3.8'
+
+services:
+  testservice-api:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.windows
+    container_name: testservice-api-windows
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - testservice-network
+
+networks:
+  testservice-network:
+    driver: nat
