@@ -28,7 +28,6 @@
     },
     "deployment": {
       "docker": "auto",
-      "kubernetes": "disabled",
       "healthChecks": "auto"
     },
     "testing": {
