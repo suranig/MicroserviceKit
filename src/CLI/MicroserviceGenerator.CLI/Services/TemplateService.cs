@@ -85,7 +85,7 @@ public class TemplateService
         return await LoadConfigurationFromPathAsync(templateInfo.Path);
     }
     
-    private async Task<string?> FindTemplatePathAsync(string templateName)
+    private Task<string?> FindTemplatePathAsync(string templateName)
     {
         // Try different possible paths
         var possiblePaths = new[]
@@ -101,11 +101,11 @@ public class TemplateService
         {
             if (File.Exists(path))
             {
-                return path;
+                return Task.FromResult<string?>(path);
             }
         }
         
-        return null;
+        return Task.FromResult<string?>(null);
     }
     
     private async Task<TemplateConfiguration?> LoadConfigurationFromPathAsync(string templatePath)
@@ -154,9 +154,9 @@ public class TemplateService
                     
                     templates.Add(new TemplateInfo
                     {
-                        Name = config.TemplateType ?? Path.GetFileNameWithoutExtension(file),
-                        Title = config.Name ?? config.MicroserviceName ?? "Unknown",
-                        Description = config.Description ?? "No description available",
+                        Name = Path.GetFileNameWithoutExtension(file),
+                        Title = config.MicroserviceName ?? "Unknown",
+                        Description = "No description available",
                         Category = category,
                         Path = file,
                         Complexity = DetermineComplexity(config),
@@ -201,8 +201,8 @@ public class TemplateService
     {
         var features = new List<string>();
         
-        if (config.Architecture?.Patterns?.Ddd == "enabled") features.Add("ddd");
-        if (config.Architecture?.Patterns?.Cqrs == "enabled") features.Add("cqrs");
+        if (config.Architecture?.Patterns?.DDD == "enabled") features.Add("ddd");
+        if (config.Architecture?.Patterns?.CQRS == "enabled") features.Add("cqrs");
         if (config.Architecture?.Patterns?.EventSourcing == "enabled") features.Add("event-sourcing");
         if (config.Features?.Messaging?.Enabled == true) features.Add("messaging");
         if (config.Features?.ExternalServices?.Enabled == true) features.Add("external-services");

@@ -230,7 +230,7 @@ public class ValidationService
         if (architecture.Patterns != null)
         {
             // Validate pattern combinations
-            if (architecture.Patterns.EventSourcing == "enabled" && architecture.Patterns.Cqrs != "enabled")
+            if (architecture.Patterns.EventSourcing == "enabled" && architecture.Patterns.CQRS != "enabled")
             {
                 warnings.Add("Event Sourcing is typically used with CQRS pattern");
             }

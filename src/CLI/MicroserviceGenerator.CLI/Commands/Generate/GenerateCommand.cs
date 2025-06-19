@@ -36,10 +36,10 @@ public static class GenerateCommand
         command.AddOption(authOption);
         command.AddOption(apiStyleOption);
         
-        command.SetHandler(async (name, template, output, interactive, customize, aggregates, externalServices, database, messaging, auth, apiStyle) =>
+        command.SetHandler(async (name, template, output, interactive, customize, aggregates, externalServices, database) =>
         {
-            await ExecuteGenerateAsync(name, template, output, interactive, customize, aggregates, externalServices, database, messaging, auth, apiStyle);
-        }, nameArgument, templateOption, outputOption, interactiveOption, customizeOption, aggregatesOption, externalServicesOption, databaseOption, messagingOption, authOption, apiStyleOption);
+            await ExecuteGenerateAsync(name, template, output, interactive, customize, aggregates, externalServices, database);
+        }, nameArgument, templateOption, outputOption, interactiveOption, customizeOption, aggregatesOption, externalServicesOption, databaseOption);
         
         return command;
     }
@@ -52,10 +52,7 @@ public static class GenerateCommand
         bool customize, 
         string[] aggregates, 
         string[] externalServices, 
-        string? database, 
-        string? messaging, 
-        string? auth, 
-        string? apiStyle)
+        string? database)
     {
         try
         {
@@ -71,10 +68,7 @@ public static class GenerateCommand
                 Customize = customize,
                 CustomAggregates = aggregates.ToList(),
                 ExternalServices = externalServices.ToList(),
-                DatabaseProvider = database,
-                MessagingProvider = messaging,
-                AuthenticationType = auth,
-                ApiStyle = apiStyle
+                DatabaseProvider = database
             };
             
             // Run interactive mode if requested or if no template specified

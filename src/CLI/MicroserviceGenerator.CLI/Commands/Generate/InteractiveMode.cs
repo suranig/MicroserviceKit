@@ -246,7 +246,7 @@ public class InteractiveMode
         }
     }
     
-    private async Task<string> PromptString(string prompt, string defaultValue)
+    private Task<string> PromptString(string prompt, string defaultValue)
     {
         var defaultText = !string.IsNullOrEmpty(defaultValue) ? $" [{defaultValue}]" : "";
         Console.Write($"{prompt}{defaultText}: ");
@@ -254,8 +254,8 @@ public class InteractiveMode
         var response = Console.ReadLine();
         
         if (string.IsNullOrEmpty(response))
-            return defaultValue;
+            return Task.FromResult(defaultValue);
             
-        return response.Trim();
+        return Task.FromResult(response.Trim());
     }
 } 

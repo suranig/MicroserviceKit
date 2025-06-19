@@ -130,7 +130,7 @@ public static class ListTemplatesCommand
     
     private static Task ShowJsonListAsync(List<Models.TemplateInfo> templates, bool detailed)
     {
-        var output = detailed ? templates : templates.Select(t => new
+        var output = detailed ? (object)templates : templates.Select(t => new
         {
             t.Name,
             t.Title,
