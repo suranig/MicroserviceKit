@@ -13,9 +13,8 @@
 - [x] Konfiguracja JSON z różnymi poziomami
 - [x] DDDModule do generowania agregatów i eventów
 - [x] ApplicationModule do generowania CQRS handlers (KOMPLETNY)
-- [x] CLI z komendami new, migrate, history
-- [x] System migracji między poziomami architektury
-- [x] Historia migracji w JSON
+- [x] CLI z komendami new, history
+- [x] Historia generowania w JSON
 
 ### ✅ **Parametryzacja**
 - [x] Dynamiczne nazwy serwisów i namespace
