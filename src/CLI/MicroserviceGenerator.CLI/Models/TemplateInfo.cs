@@ -15,6 +15,6 @@ public class TemplateInfo
     public List<string> Tags { get; set; } = new();
     public List<string> WhenToUse { get; set; } = new();
     public List<string> Technologies { get; set; } = new();
-    public int ProjectCount { get; set; }
+    public string ProjectCount { get; set; } = string.Empty;
     public TemplateConfiguration? Configuration { get; set; }
 } 

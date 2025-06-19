@@ -6,7 +6,7 @@ namespace MicroserviceGenerator.CLI.Services;
 
 public class TemplateService
 {
-    private readonly string _templatesPath = "templates";
+    private readonly string _templatesPath = "../../../templates";
     
     public async Task<List<TemplateInfo>> LoadTemplatesAsync()
     {
@@ -41,14 +41,14 @@ public class TemplateService
                         Title = template.Title,
                         Description = template.Description,
                         Category = category.Key,
-                        Path = Path.Combine(_templatesPath, category.Value.Path, $"{template.Name}.json"),
+                        Path = Path.Combine(_templatesPath, category.Value.Path, template.Name),
                         Complexity = template.Complexity,
                         EstimatedTime = template.EstimatedTime,
                         Features = template.Features,
                         Tags = template.Tags,
                         WhenToUse = template.WhenToUse,
                         Technologies = template.Technologies,
-                        ProjectCount = template.ProjectCount
+                        ProjectCount = template.ProjectCount?.ToString() ?? "1"
                     });
                 }
             }
@@ -165,7 +165,7 @@ public class TemplateService
                         Tags = new List<string>(),
                         WhenToUse = new List<string>(),
                         Technologies = ExtractTechnologies(config),
-                        ProjectCount = 1
+                        ProjectCount = "1"
                     });
                 }
             }
