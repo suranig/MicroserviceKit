@@ -42,9 +42,6 @@ src/CLI/MicroserviceGenerator.CLI/
 │   ├── Describe/
 │   │   ├── DescribeCommand.cs
 │   │   └── TemplateDescriptionService.cs
-│   └── History/
-│       ├── HistoryCommand.cs
-│       └── HistoryService.cs
 ├── Services/
 │   ├── TemplateEngineService.cs
 │   ├── ConfigurationService.cs
@@ -68,7 +65,6 @@ var rootCommand = new RootCommand("MicroserviceKit - Complete toolkit for genera
 rootCommand.AddCommand(GenerateCommand.Create());
 rootCommand.AddCommand(ListTemplatesCommand.Create());
 rootCommand.AddCommand(DescribeCommand.Create());
-rootCommand.AddCommand(HistoryCommand.Create());
 
 return await rootCommand.InvokeAsync(args);
 ```
