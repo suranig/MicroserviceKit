@@ -20,13 +20,13 @@ microkit new MyService --interactive
 
 ## 📚 Documentation
 
-For detailed documentation, please visit:
-- [Full Documentation](docs.md)
-- [Configuration Guide](docs.md#configuration-guide)
-- [Usage Examples](docs.md#usage-examples)
-- [Architecture Levels](docs.md#architecture-levels)
-- [Migration Guide](docs.md#migration-guide)
-- [FAQ](docs.md#faq)
+- [Getting Started](GETTING_STARTED.md)
+- [CLI Reference](docs.md)
+- [Architecture Overview](ARCHITECTURE.md)
+- [Template Guide](TEMPLATES.md)
+- [Testing Guide](TESTING.md)
+- [Deployment Guide](DEPLOYMENT.md)
+- [Changelog](CHANGELOG.md)
 
 ## 🏗️ Architecture Levels
 
@@ -43,7 +43,7 @@ For detailed documentation, please visit:
 - **CQRS**: Commands, Queries, Handlers with Wolverine
 - **Event-Driven**: Domain events, message brokers
 - **Testing**: Unit, Integration, Architecture tests
-- **Containerization**: Docker & Kubernetes support
+- **Containerization**: Docker 
 - **Infrastructure**: PostgreSQL, MongoDB, Redis, RabbitMQ
 
 ## 🚀 Quick Examples
