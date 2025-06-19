@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>microkit</ToolCommandName>
     <PackageId>MicroserviceKit</PackageId>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <Authors>Paweł Pilichowski</Authors>
     <Description>🚀 Complete toolkit for generating production-ready .NET 8 microservices with DDD, CQRS, Clean Architecture, Event-Driven Architecture, and comprehensive infrastructure. Generate enterprise-grade microservices with REST APIs, CQRS, MongoDB read models, RabbitMQ messaging, external service integration, Docker, and complete testing suite.</Description>
     <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;event-driven;mongodb;rabbitmq;docker;enterprise;microkit</PackageTags>
