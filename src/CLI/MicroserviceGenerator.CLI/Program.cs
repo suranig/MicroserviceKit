@@ -81,8 +81,6 @@ addCommand.AddCommand(addAggregateCommand);
 // Add commands
 rootCommand.AddCommand(newCommand);
 rootCommand.AddCommand(addCommand);
-rootCommand.AddCommand(MigrateCommand.Create());
-rootCommand.AddCommand(HistoryCommand.Create());
 
 return await rootCommand.InvokeAsync(args);
 
