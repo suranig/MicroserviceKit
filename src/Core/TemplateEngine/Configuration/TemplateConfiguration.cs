@@ -82,6 +82,7 @@ public class DomainConfiguration
 {
     public List<AggregateConfiguration>? Aggregates { get; set; }
     public List<ValueObjectConfiguration>? ValueObjects { get; set; }
+    public List<EnumConfiguration>? Enums { get; set; }
 }
 
 public class AggregateConfiguration
@@ -102,6 +103,12 @@ public class ValueObjectConfiguration
 {
     public string Name { get; set; } = string.Empty;
     public List<PropertyConfiguration> Properties { get; set; } = new();
+}
+
+public class EnumConfiguration
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Values { get; set; } = new();
 }
 
 public class ApiConfiguration

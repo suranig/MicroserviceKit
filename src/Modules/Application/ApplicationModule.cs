@@ -195,7 +195,10 @@ public class ApplicationModule : ITemplateModule
             _ => GenerateDefaultCommandParameters(aggregate)
         };
 
-        return $@"namespace {config.Namespace}.Application.{aggregate.Name}.Commands.{operation}{aggregate.Name};
+        var hasEnums = config.Domain?.Enums?.Any() == true;
+        var enumUsing = hasEnums ? $"using {config.Namespace}.Domain.Enums;\n" : "";
+
+        return $@"{enumUsing}namespace {config.Namespace}.Application.{aggregate.Name}.Commands.{operation}{aggregate.Name};
 
 public record {operation}{aggregate.Name}Command({parameters});";
     }
@@ -370,7 +373,10 @@ public class {queryName}QueryHandler : IConsumer<{queryName}Query>
 
         var properties = string.Join("\n    ", filteredProperties);
 
-        return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
+        var hasEnums = config.Domain?.Enums?.Any() == true;
+        var enumUsing = hasEnums ? $"using {config.Namespace}.Domain.Enums;\n" : "";
+
+        return $@"{enumUsing}namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
 public class {aggregate.Name}Dto
 {{
@@ -392,7 +398,10 @@ public class {aggregate.Name}Dto
 
         var properties = string.Join("\n    ", filteredProperties);
 
-        return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
+        var hasEnums = config.Domain?.Enums?.Any() == true;
+        var enumUsing = hasEnums ? $"using {config.Namespace}.Domain.Enums;\n" : "";
+
+        return $@"{enumUsing}namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
 public class Create{aggregate.Name}Dto
 {{
@@ -411,7 +420,10 @@ public class Create{aggregate.Name}Dto
 
         var properties = string.Join("\n    ", filteredProperties);
 
-        return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
+        var hasEnums = config.Domain?.Enums?.Any() == true;
+        var enumUsing = hasEnums ? $"using {config.Namespace}.Domain.Enums;\n" : "";
+
+        return $@"{enumUsing}namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
 public class Update{aggregate.Name}Dto
 {{
@@ -576,16 +588,7 @@ public class PagedResult<T>
         
         var constructorParams = string.Join(", ", filteredProperties.Select(p => $"command.{p.Name}"));
         
-        // Generate flexible entity creation that doesn't assume specific constructor signature
-        return $@"// Create entity - adjust constructor parameters based on your domain entity
-        var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}(
-            Guid.NewGuid()
-            {(filteredProperties.Any() ? ", " + constructorParams : "")}
-        );
-        
-        // Set audit fields if they exist
-        // entity.CreatedAt = DateTime.UtcNow;
-        
+        return $@"var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}({constructorParams});
         await _repository.AddAsync(entity, context.CancellationToken);";
     }
 
@@ -601,7 +604,7 @@ public class PagedResult<T>
 
     private string GenerateDeleteLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entity = await _repository.GetByIdAsync(command.Id, context.CancellationToken);
+        return $@"var entity = await _repository.GetByIdAsync(command.id, context.CancellationToken);
         if (entity == null)
             throw new NotFoundException(""{aggregate.Name} not found"");
             
