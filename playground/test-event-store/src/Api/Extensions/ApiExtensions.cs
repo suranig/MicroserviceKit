@@ -119,13 +119,8 @@ public static class ApiExtensions
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
                 new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader("version"),
-                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader("X-Version"),
-                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
+                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader("X-Version")
             );
-        }).AddVersionedApiExplorer(setup =>
-        {
-            setup.GroupNameFormat = "'v'VVV";
-            setup.SubstituteApiVersionInUrl = true;
         });
 
         return services;

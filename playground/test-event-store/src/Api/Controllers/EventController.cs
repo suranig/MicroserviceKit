@@ -7,7 +7,7 @@ using EventStoreService.Application.Event.Queries.GetEvents;
 using EventStoreService.Application.Event.Queries.GetEventsWithPaging;
 using EventStoreService.Application.Event.DTOs;
 using EventStoreService.Api.Models;
-using Wolverine;
+using MassTransit;
 
 namespace EventStoreService.Api.Controllers;
 
@@ -42,7 +42,7 @@ public class EventController : ControllerBase
         _logger.LogInformation("Getting events with page={Page}, pageSize={PageSize}", page, pageSize);
         
         var query = new GetEventsWithPagingQuery(page, pageSize);
-        var result = await _messageBus.InvokeAsync<PagedResult<EventDto>>(query, cancellationToken);
+        var result = await _messageBus.InvokeAsync<PagedResponse<EventDto>>(query, cancellationToken);
         
         var response = new PagedResponse<EventResponse>
         {
@@ -162,7 +162,6 @@ public class EventController : ControllerBase
     private static CreateEventCommand MapToCreateCommand(CreateEventRequest request)
     {
         return new CreateEventCommand(
-            request.Id,
             request.Name,
             request.Description);
     }
@@ -171,7 +170,6 @@ public class EventController : ControllerBase
     {
         return new UpdateEventCommand(
             id,
-            request.Id,
             request.Name,
             request.Description);
     }

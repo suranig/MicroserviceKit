@@ -1,7 +1,7 @@
 using EventStoreService.Api.Extensions;
 using EventStoreService.Api.Filters;
 using EventStoreService.Api.Middleware;
-using Wolverine;
+using MassTransit;
 using Serilog;
 using EventStoreService.Application.Extensions;
 using EventStoreService.Infrastructure.Extensions;
@@ -34,8 +34,19 @@ builder.Services.AddApiExtensions(builder.Configuration);
 
 
 
-// Add Wolverine
-builder.Host.UseWolverine();
+// Add MassTransit
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/vhost", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 
