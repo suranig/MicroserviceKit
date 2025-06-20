@@ -1,0 +1,255 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Legacy integration adapter with anti-corruption layer and data synchronization",
+  
+  "architecture": {
+    "pattern": "legacy-adapter",
+    "complexity": "medium",
+    "layers": ["Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "adapterPattern": {
+      "enabled": true,
+      "antiCorruptionLayer": true,
+      "dataTransformation": true,
+      "protocolAdaptation": true
+    },
+    "legacyIntegration": {
+      "enabled": true,
+      "databaseIntegration": true,
+      "apiIntegration": true,
+      "fileIntegration": true,
+      "messagingIntegration": true
+    },
+    "dataSync": {
+      "enabled": true,
+      "bidirectionalSync": true,
+      "eventDrivenSync": true,
+      "batchSync": true,
+      "realTimeSync": true
+    },
+    "antiCorruptionLayer": {
+      "enabled": true,
+      "domainModelProtection": true,
+      "dataValidation": true,
+      "errorHandling": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "SyncOperation",
+        "entities": ["SyncOperation", "SyncRecord", "SyncError"],
+        "valueObjects": ["SyncId", "SyncStatus", "SyncDirection"],
+        "domainEvents": [
+          "SyncStarted",
+          "SyncCompleted",
+          "SyncFailed",
+          "DataTransformed"
+        ]
+      }
+    ],
+    "domainServices": [
+      "DataTransformer",
+      "LegacyAdapter",
+      "SyncCoordinator"
+    ],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "StartSync",
+        "handler": "StartSyncHandler",
+        "validation": true
+      },
+      {
+        "name": "TransformData",
+        "handler": "TransformDataHandler",
+        "validation": true
+      },
+      {
+        "name": "SyncRecord",
+        "handler": "SyncRecordHandler",
+        "validation": true
+      },
+      {
+        "name": "HandleSyncError",
+        "handler": "HandleSyncErrorHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "GetSyncStatus",
+        "handler": "GetSyncStatusHandler",
+        "returnType": "SyncStatusDto"
+      },
+      {
+        "name": "GetSyncHistory",
+        "handler": "GetSyncHistoryHandler",
+        "returnType": "List<SyncRecordDto>",
+        "pagination": true
+      },
+      {
+        "name": "GetSyncErrors",
+        "handler": "GetSyncErrorsHandler",
+        "returnType": "List<SyncErrorDto>"
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "SyncStarted",
+        "handler": "SyncStartedHandler"
+      },
+      {
+        "event": "SyncCompleted",
+        "handler": "SyncCompletedHandler"
+      },
+      {
+        "event": "SyncFailed",
+        "handler": "SyncFailedHandler"
+      }
+    ],
+    "adapters": [
+      {
+        "name": "{{legacySystemName}}Adapter",
+        "type": "database",
+        "connectionString": "{{legacyConnectionString}}",
+        "transformations": true
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": false,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}",
+      "tables": ["SyncOperations", "SyncRecords", "SyncErrors"]
+    },
+    "legacyDatabase": {
+      "provider": "{{legacyDbProvider}}",
+      "connectionString": "{{legacyConnectionString}}",
+      "readOnly": false,
+      "tables": ["{{legacyTables}}"]
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": true,
+      "syncEvents": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "transformationCache": true,
+      "ttl": 600
+    },
+    "externalServices": [
+      {
+        "name": "{{legacyApiName}}",
+        "type": "soap",
+        "baseUrl": "{{legacyApiUrl}}",
+        "authentication": "basic",
+        "retryPolicy": true
+      }
+    ]
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "SyncController",
+        "actions": ["StartSync", "GetStatus", "GetHistory"],
+        "authorization": "sync-admin"
+      },
+      {
+        "name": "DataController",
+        "actions": ["Transform", "Validate", "GetErrors"],
+        "authorization": "data-admin"
+      },
+      {
+        "name": "LegacyProxyController",
+        "actions": ["ProxyRequest", "GetLegacyData"],
+        "authorization": "legacy-access"
+      }
+    ]
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "legacyIntegrationTests": true,
+    "dataTransformationTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "networkPolicy": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "syncOperations": true,
+      "dataTransformations": true,
+      "legacyInteractions": true
+    },
+    "tracing": true,
+    "syncMetrics": {
+      "syncCount": true,
+      "syncDuration": true,
+      "errorRate": true,
+      "dataVolume": true
+    }
+  },
+  
+  "dataTransformation": {
+    "mappingRules": [
+      {
+        "source": "{{legacyField}}",
+        "target": "{{modernField}}",
+        "transformation": "{{transformationRule}}"
+      }
+    ],
+    "validationRules": [
+      {
+        "field": "{{fieldName}}",
+        "rule": "{{validationRule}}"
+      }
+    ],
+    "errorHandling": {
+      "strategy": "log-and-continue",
+      "retryAttempts": 3,
+      "deadLetterQueue": true
+    }
+  }
+} 
