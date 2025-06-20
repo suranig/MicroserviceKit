@@ -1,6 +1,7 @@
 using Microservice.Core.TemplateEngine.Abstractions;
 using Microservice.Core.TemplateEngine.Configuration;
 using System.Text;
+using MassTransit;
 
 namespace Microservice.Modules.Application;
 
@@ -21,55 +22,44 @@ public class ApplicationModule : ITemplateModule
         var outputPath = context.GetApplicationProjectPath();
 
         // Create project structure
-        await CreateProjectStructureAsync(outputPath, config);
+        await CreateProjectStructureAsync(context, config);
 
         // Generate handlers for each aggregate
         if (config.Domain?.Aggregates != null)
         {
             foreach (var aggregate in config.Domain.Aggregates)
             {
-                await GenerateAggregateHandlersAsync(outputPath, config, aggregate);
+                await GenerateAggregateHandlersAsync(context, config, aggregate);
             }
         }
 
         // Generate common application services
-        await GenerateApplicationServicesAsync(outputPath, config);
+        await GenerateApplicationServicesAsync(context, config);
     }
 
-    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task CreateProjectStructureAsync(GenerationContext context, TemplateConfiguration config)
     {
-        Directory.CreateDirectory(outputPath);
-        Directory.CreateDirectory(Path.Combine(outputPath, "Common"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Behaviors"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Extensions"));
-
-        // Generate .csproj file
+        // Note: context.WriteFileAsync automatically creates directories, so we don't need manual Directory.CreateDirectory
+        
+        // Generate .csproj file using relative path
         var csprojContent = GenerateProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, $"{config.MicroserviceName}.Application.csproj"), csprojContent);
+        await context.WriteFileAsync($"src/Application/{config.MicroserviceName}.Application.csproj", csprojContent);
     }
 
-    private async Task GenerateAggregateHandlersAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateAggregateHandlersAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var aggregatePath = Path.Combine(outputPath, aggregate.Name);
-        Directory.CreateDirectory(aggregatePath);
-        Directory.CreateDirectory(Path.Combine(aggregatePath, "Commands"));
-        Directory.CreateDirectory(Path.Combine(aggregatePath, "Queries"));
-        Directory.CreateDirectory(Path.Combine(aggregatePath, "DTOs"));
-
         // Generate Commands
-        await GenerateCommandsAsync(aggregatePath, config, aggregate);
+        await GenerateCommandsAsync(context, config, aggregate);
 
         // Generate Queries  
-        await GenerateQueriesAsync(aggregatePath, config, aggregate);
+        await GenerateQueriesAsync(context, config, aggregate);
 
         // Generate DTOs
-        await GenerateDTOsAsync(aggregatePath, config, aggregate);
+        await GenerateDTOsAsync(context, config, aggregate);
     }
 
-    private async Task GenerateCommandsAsync(string aggregatePath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateCommandsAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var commandsPath = Path.Combine(aggregatePath, "Commands");
-
         // Generate CRUD commands
         var crudOperations = new[] { "Create", "Update", "Delete" };
         var customOperations = aggregate.Operations ?? new List<string>();
@@ -77,33 +67,28 @@ public class ApplicationModule : ITemplateModule
 
         foreach (var operation in allOperations)
         {
-            var operationPath = Path.Combine(commandsPath, $"{operation}{aggregate.Name}");
-            Directory.CreateDirectory(operationPath);
-
             // Generate Command
             var commandContent = GenerateCommand(config, aggregate, operation);
-            await File.WriteAllTextAsync(
-                Path.Combine(operationPath, $"{operation}{aggregate.Name}Command.cs"), 
+            await context.WriteFileAsync(
+                $"src/Application/{aggregate.Name}/Commands/{operation}{aggregate.Name}/{operation}{aggregate.Name}Command.cs", 
                 commandContent);
 
             // Generate Handler
             var handlerContent = GenerateCommandHandler(config, aggregate, operation);
-            await File.WriteAllTextAsync(
-                Path.Combine(operationPath, $"{operation}{aggregate.Name}CommandHandler.cs"), 
+            await context.WriteFileAsync(
+                $"src/Application/{aggregate.Name}/Commands/{operation}{aggregate.Name}/{operation}{aggregate.Name}CommandHandler.cs", 
                 handlerContent);
 
             // Generate Validator
             var validatorContent = GenerateCommandValidator(config, aggregate, operation);
-            await File.WriteAllTextAsync(
-                Path.Combine(operationPath, $"{operation}{aggregate.Name}CommandValidator.cs"), 
+            await context.WriteFileAsync(
+                $"src/Application/{aggregate.Name}/Commands/{operation}{aggregate.Name}/{operation}{aggregate.Name}CommandValidator.cs", 
                 validatorContent);
         }
     }
 
-    private async Task GenerateQueriesAsync(string aggregatePath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateQueriesAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var queriesPath = Path.Combine(aggregatePath, "Queries");
-
         // Generate standard queries
         var queries = new[]
         {
@@ -114,68 +99,64 @@ public class ApplicationModule : ITemplateModule
 
         foreach (var queryName in queries)
         {
-            var queryPath = Path.Combine(queriesPath, queryName);
-            Directory.CreateDirectory(queryPath);
-
             // Generate Query
             var queryContent = GenerateQuery(config, aggregate, queryName);
-            await File.WriteAllTextAsync(
-                Path.Combine(queryPath, $"{queryName}Query.cs"), 
+            await context.WriteFileAsync(
+                $"src/Application/{aggregate.Name}/Queries/{queryName}/{queryName}Query.cs", 
                 queryContent);
 
             // Generate Handler
             var handlerContent = GenerateQueryHandler(config, aggregate, queryName);
-            await File.WriteAllTextAsync(
-                Path.Combine(queryPath, $"{queryName}QueryHandler.cs"), 
+            await context.WriteFileAsync(
+                $"src/Application/{aggregate.Name}/Queries/{queryName}/{queryName}QueryHandler.cs", 
                 handlerContent);
         }
     }
 
-    private async Task GenerateDTOsAsync(string aggregatePath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateDTOsAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var dtosPath = Path.Combine(aggregatePath, "DTOs");
-
         // Generate DTOs
         var dtoContent = GenerateDTO(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(dtosPath, $"{aggregate.Name}Dto.cs"), 
+        await context.WriteFileAsync(
+            $"src/Application/{aggregate.Name}/DTOs/{aggregate.Name}Dto.cs", 
             dtoContent);
 
         var createDtoContent = GenerateCreateDTO(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(dtosPath, $"Create{aggregate.Name}Dto.cs"), 
+        await context.WriteFileAsync(
+            $"src/Application/{aggregate.Name}/DTOs/Create{aggregate.Name}Dto.cs", 
             createDtoContent);
 
         var updateDtoContent = GenerateUpdateDTO(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(dtosPath, $"Update{aggregate.Name}Dto.cs"), 
+        await context.WriteFileAsync(
+            $"src/Application/{aggregate.Name}/DTOs/Update{aggregate.Name}Dto.cs", 
             updateDtoContent);
     }
 
-    private async Task GenerateApplicationServicesAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateApplicationServicesAsync(GenerationContext context, TemplateConfiguration config)
     {
-        // Generate Extensions
-        var extensionsContent = GenerateServiceCollectionExtensions(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Extensions", "ServiceCollectionExtensions.cs"), 
-            extensionsContent);
+        // Generate ServiceCollection extensions
+        await context.WriteFileAsync(
+            "src/Application/Extensions/ServiceCollectionExtensions.cs",
+            GenerateServiceCollectionExtensions(config));
 
-        // Generate Behaviors
-        var validationBehaviorContent = GenerateValidationBehavior(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Behaviors", "ValidationBehavior.cs"), 
-            validationBehaviorContent);
+        // Generate Repository interface
+        await context.WriteFileAsync(
+            "src/Application/Common/IRepository.cs",
+            GenerateRepositoryInterface(config));
 
-        var loggingBehaviorContent = GenerateLoggingBehavior(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Behaviors", "LoggingBehavior.cs"), 
-            loggingBehaviorContent);
+        // Generate MassTransit middleware
+        await context.WriteFileAsync(
+            "src/Application/Middleware/ValidationFilter.cs",
+            GenerateValidationMiddleware(config));
 
-        // Generate Common interfaces
-        var repositoryInterfaceContent = GenerateRepositoryInterface(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Common", "IRepository.cs"), 
-            repositoryInterfaceContent);
+        await context.WriteFileAsync(
+            "src/Application/Middleware/LoggingFilter.cs",
+            GenerateLoggingMiddleware(config));
+
+        // Generate common exceptions
+        await context.WriteFileAsync(
+            "src/Application/Common/NotFoundException.cs",
+            GenerateNotFoundException(config));
     }
 
     private string GenerateProjectFile(TemplateConfiguration config)
@@ -189,14 +170,16 @@ public class ApplicationModule : ITemplateModule
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""WolverineFx"" Version=""3.5.0"" />
     <PackageReference Include=""FluentValidation"" Version=""11.9.0"" />
     <PackageReference Include=""FluentValidation.DependencyInjectionExtensions"" Version=""11.9.0"" />
-    <PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.0"" />
+    <PackageReference Include=""MassTransit"" Version=""8.1.3"" />
+    <PackageReference Include=""MassTransit.RabbitMQ"" Version=""8.1.3"" />
+    <PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />
+    <PackageReference Include=""Microsoft.Extensions.Logging.Abstractions"" Version=""8.0.2"" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=""..\..\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />
+    <ProjectReference Include=""../Domain/{config.MicroserviceName}.Domain.csproj"" />
   </ItemGroup>
 
 </Project>";
@@ -206,10 +189,10 @@ public class ApplicationModule : ITemplateModule
     {
         var parameters = operation.ToLowerInvariant() switch
         {
-            "create" => string.Join(", ", aggregate.Properties.Select(p => $"{p.Type} {ToCamelCase(p.Name)}")),
-            "update" => $"Guid id, " + string.Join(", ", aggregate.Properties.Select(p => $"{p.Type} {ToCamelCase(p.Name)}")),
+            "create" => GenerateCreateCommandParameters(aggregate),
+            "update" => GenerateUpdateCommandParameters(aggregate),
             "delete" => "Guid id",
-            _ => string.Join(", ", aggregate.Properties.Take(2).Select(p => $"{p.Type} {ToCamelCase(p.Name)}"))
+            _ => GenerateDefaultCommandParameters(aggregate)
         };
 
         return $@"namespace {config.Namespace}.Application.{aggregate.Name}.Commands.{operation}{aggregate.Name};
@@ -217,19 +200,46 @@ public class ApplicationModule : ITemplateModule
 public record {operation}{aggregate.Name}Command({parameters});";
     }
 
+    private string GenerateCreateCommandParameters(AggregateConfiguration aggregate)
+    {
+        // Filter out Id, CreatedAt, UpdatedAt for create command
+        var filteredProps = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase));
+        return string.Join(", ", filteredProps.Select(p => $"{p.Type} {p.Name}"));
+    }
+
+    private string GenerateUpdateCommandParameters(AggregateConfiguration aggregate)
+    {
+        // Always include Id for update, then filter other properties
+        var filteredProps = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase));
+        var propParams = string.Join(", ", filteredProps.Select(p => $"{p.Type} {p.Name}"));
+        return string.IsNullOrEmpty(propParams) ? "Guid Id" : $"Guid Id, {propParams}";
+    }
+
+    private string GenerateDefaultCommandParameters(AggregateConfiguration aggregate)
+    {
+        // For delete operations, always use Guid Id
+        return "Guid Id";
+    }
+
     private string GenerateCommandHandler(TemplateConfiguration config, AggregateConfiguration aggregate, string operation)
     {
         var returnType = operation.ToLowerInvariant() switch
         {
             "create" => "Guid",
-            "update" => "void",
-            "delete" => "void",
-            _ => "void"
+            "update" => "",
+            "delete" => "",
+            _ => ""
         };
 
         var handlerLogic = operation.ToLowerInvariant() switch
         {
-            "create" => GenerateCreateLogic(aggregate),
+            "create" => GenerateCreateLogic(config, aggregate),
             "update" => GenerateUpdateLogic(aggregate),
             "delete" => GenerateDeleteLogic(aggregate),
             _ => $"// TODO: Implement {operation} logic"
@@ -237,21 +247,25 @@ public record {operation}{aggregate.Name}Command({parameters});";
 
         return $@"using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Application.Common;
+using MassTransit;
 
 namespace {config.Namespace}.Application.{aggregate.Name}.Commands.{operation}{aggregate.Name};
 
-public class {operation}{aggregate.Name}CommandHandler
+public class {operation}{aggregate.Name}CommandHandler : IConsumer<{operation}{aggregate.Name}Command>
 {{
-    private readonly IRepository<{aggregate.Name}> _repository;
+    private readonly IRepository<{config.Namespace}.Domain.Entities.{aggregate.Name}> _repository;
 
-    public {operation}{aggregate.Name}CommandHandler(IRepository<{aggregate.Name}> repository)
+    public {operation}{aggregate.Name}CommandHandler(IRepository<{config.Namespace}.Domain.Entities.{aggregate.Name}> repository)
     {{
         _repository = repository;
     }}
 
-    public async Task<{returnType}> Handle({operation}{aggregate.Name}Command command, CancellationToken cancellationToken)
+    public async Task Consume(ConsumeContext<{operation}{aggregate.Name}Command> context)
     {{
+        var command = context.Message;
         {handlerLogic}
+        
+        {(returnType == "Guid" ? "await context.RespondAsync(entity.Id);" : "")}
     }}
 }}";
     }
@@ -282,8 +296,8 @@ public class {operation}{aggregate.Name}CommandValidator : AbstractValidator<{op
     {
         var parameters = queryName switch
         {
-            var name when name.Contains("ById") => "Guid id",
-            var name when name.Contains("WithPaging") => "int page = 1, int pageSize = 10",
+            var name when name.Contains("ById") => "Guid Id",
+            var name when name.Contains("WithPaging") => "int Page = 1, int PageSize = 10",
             _ => ""
         };
 
@@ -312,10 +326,11 @@ public record {queryName}Query({parameters});";
 
         return $@"using {config.Namespace}.Application.{aggregate.Name}.DTOs;
 using {config.Namespace}.Application.Common;
+using MassTransit;
 
 namespace {config.Namespace}.Application.{aggregate.Name}.Queries.{queryName};
 
-public class {queryName}QueryHandler
+public class {queryName}QueryHandler : IConsumer<{queryName}Query>
 {{
     private readonly IRepository<{config.Namespace}.Domain.Entities.{aggregate.Name}> _repository;
 
@@ -324,16 +339,36 @@ public class {queryName}QueryHandler
         _repository = repository;
     }}
 
-    public async Task<{returnType}> Handle({queryName}Query query, CancellationToken cancellationToken)
+    public async Task Consume(ConsumeContext<{queryName}Query> context)
     {{
+        var query = context.Message;
         {handlerLogic}
+        await context.RespondAsync(result);
+    }}
+
+    private {aggregate.Name}Dto MapToDto({config.Namespace}.Domain.Entities.{aggregate.Name} entity)
+    {{
+        return new {aggregate.Name}Dto
+        {{
+            Id = entity.Id,
+            // TODO: Map other properties
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        }};
     }}
 }}";
     }
 
     private string GenerateDTO(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out properties that we'll add manually to avoid duplicates
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}");
+
+        var properties = string.Join("\n    ", filteredProperties);
 
         return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
@@ -348,7 +383,14 @@ public class {aggregate.Name}Dto
 
     private string GenerateCreateDTO(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out audit properties and Id for create DTO
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}");
+
+        var properties = string.Join("\n    ", filteredProperties);
 
         return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
@@ -360,7 +402,14 @@ public class Create{aggregate.Name}Dto
 
     private string GenerateUpdateDTO(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out audit properties and Id for update DTO
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}");
+
+        var properties = string.Join("\n    ", filteredProperties);
 
         return $@"namespace {config.Namespace}.Application.{aggregate.Name}.DTOs;
 
@@ -375,7 +424,7 @@ public class Update{aggregate.Name}Dto
         return $@"using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using FluentValidation;
-using Wolverine;
+using MassTransit;
 
 namespace {config.Namespace}.Application.Extensions;
 
@@ -386,73 +435,104 @@ public static class ServiceCollectionExtensions
         // Add FluentValidation
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         
-        // Add Wolverine behaviors
-        services.AddScoped(typeof(ValidationBehavior<,>));
-        services.AddScoped(typeof(LoggingBehavior<,>));
+        // Add MassTransit
+        services.AddMassTransit(x =>
+        {{
+            // Add consumers from current assembly
+            x.AddConsumers(Assembly.GetExecutingAssembly());
+            
+            // Configure RabbitMQ transport
+            x.UsingRabbitMq((context, cfg) =>
+            {{
+                cfg.Host(""localhost"", ""/"", h =>
+                {{
+                    h.Username(""guest"");
+                    h.Password(""guest"");
+                }});
+                
+                cfg.ConfigureEndpoints(context);
+            }});
+        }});
         
         return services;
     }}
 }}";
     }
 
-    private string GenerateValidationBehavior(TemplateConfiguration config)
+    private string GenerateValidationMiddleware(TemplateConfiguration config)
     {
         return $@"using FluentValidation;
+using MassTransit;
 
-namespace {config.Namespace}.Application.Behaviors;
+namespace {config.Namespace}.Application.Middleware;
 
-public class ValidationBehavior<TRequest, TResponse>
+public class ValidationFilter<T> : IFilter<ConsumeContext<T>>
+    where T : class
 {{
-    private readonly IEnumerable<IValidator<TRequest>> _validators;
+    private readonly IValidator<T> _validator;
 
-    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+    public ValidationFilter(IValidator<T> validator)
     {{
-        _validators = validators;
+        _validator = validator;
     }}
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task Send(ConsumeContext<T> context, IPipe<ConsumeContext<T>> next)
     {{
-        if (_validators.Any())
+        var validationResult = await _validator.ValidateAsync(context.Message);
+        
+        if (!validationResult.IsValid)
         {{
-            var context = new ValidationContext<TRequest>(request);
-            var validationResults = await Task.WhenAll(_validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-            var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
-
-            if (failures.Count != 0)
-                throw new ValidationException(failures);
+            throw new ValidationException(validationResult.Errors);
         }}
 
-        return await next();
+        await next.Send(context);
+    }}
+
+    public void Probe(ProbeContext context)
+    {{
+        context.CreateFilterScope(""validation"");
     }}
 }}";
     }
 
-    private string GenerateLoggingBehavior(TemplateConfiguration config)
+    private string GenerateLoggingMiddleware(TemplateConfiguration config)
     {
         return $@"using Microsoft.Extensions.Logging;
+using MassTransit;
 
-namespace {config.Namespace}.Application.Behaviors;
+namespace {config.Namespace}.Application.Middleware;
 
-public class LoggingBehavior<TRequest, TResponse>
+public class LoggingFilter<T> : IFilter<ConsumeContext<T>>
+    where T : class
 {{
-    private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
+    private readonly ILogger<LoggingFilter<T>> _logger;
 
-    public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
+    public LoggingFilter(ILogger<LoggingFilter<T>> logger)
     {{
         _logger = logger;
     }}
 
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    public async Task Send(ConsumeContext<T> context, IPipe<ConsumeContext<T>> next)
     {{
-        var requestName = typeof(TRequest).Name;
+        var messageType = typeof(T).Name;
         
-        _logger.LogInformation(""Handling {{RequestName}}"", requestName);
+        _logger.LogInformation(""Processing message {{MessageType}}"", messageType);
         
-        var response = await next();
-        
-        _logger.LogInformation(""Handled {{RequestName}}"", requestName);
-        
-        return response;
+        try
+        {{
+            await next.Send(context);
+            _logger.LogInformation(""Successfully processed message {{MessageType}}"", messageType);
+        }}
+        catch (Exception ex)
+        {{
+            _logger.LogError(ex, ""Error processing message {{MessageType}}"", messageType);
+            throw;
+        }}
+    }}
+
+    public void Probe(ProbeContext context)
+    {{
+        context.CreateFilterScope(""logging"");
     }}
 }}";
     }
@@ -486,55 +566,60 @@ public class PagedResult<T>
     }
 
     // Helper methods for generating logic
-    private string GenerateCreateLogic(AggregateConfiguration aggregate)
+    private string GenerateCreateLogic(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var constructorParams = string.Join(", ", aggregate.Properties.Select(p => $"command.{ToPascalCase(p.Name)}"));
+        // Only use properties that are not audit fields and not Id for entity creation
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase));
         
-        return $@"var entity = new {aggregate.Name}({constructorParams});
-        await _repository.AddAsync(entity, cancellationToken);
-        return entity.Id;";
+        var constructorParams = string.Join(", ", filteredProperties.Select(p => $"command.{p.Name}"));
+        
+        return $@"var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}(Guid.NewGuid(), {constructorParams}, DateTime.UtcNow, DateTime.UtcNow);
+        await _repository.AddAsync(entity, context.CancellationToken);";
     }
 
     private string GenerateUpdateLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entity = await _repository.GetByIdAsync(command.Id, cancellationToken);
+        return $@"var entity = await _repository.GetByIdAsync(command.Id, context.CancellationToken);
         if (entity == null)
             throw new NotFoundException(""{aggregate.Name} not found"");
             
         // TODO: Update entity properties
-        await _repository.UpdateAsync(entity, cancellationToken);";
+        await _repository.UpdateAsync(entity, context.CancellationToken);";
     }
 
     private string GenerateDeleteLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entity = await _repository.GetByIdAsync(command.Id, cancellationToken);
+        return $@"var entity = await _repository.GetByIdAsync(command.Id, context.CancellationToken);
         if (entity == null)
             throw new NotFoundException(""{aggregate.Name} not found"");
             
-        await _repository.DeleteAsync(entity, cancellationToken);";
+        await _repository.DeleteAsync(entity, context.CancellationToken);";
     }
 
     private string GenerateGetByIdLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entity = await _repository.GetByIdAsync(query.Id, cancellationToken);
-        return entity == null ? null : MapToDto(entity);";
+        return $@"var entity = await _repository.GetByIdAsync(query.Id, context.CancellationToken);
+        var result = entity == null ? null : MapToDto(entity);";
     }
 
     private string GenerateGetAllLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entities = await _repository.GetAllAsync(cancellationToken);
-        return entities.Select(MapToDto).ToList();";
+        return $@"var entities = await _repository.GetAllAsync(context.CancellationToken);
+        var result = entities.Select(MapToDto).ToList();";
     }
 
     private string GenerateGetWithPagingLogic(AggregateConfiguration aggregate)
     {
-        return $@"var result = await _repository.GetPagedAsync(query.Page, query.PageSize, cancellationToken);
-        return new PagedResult<{aggregate.Name}Dto>
+        return $@"var pagedResult = await _repository.GetPagedAsync(query.Page, query.PageSize, context.CancellationToken);
+        var result = new PagedResult<{aggregate.Name}Dto>
         {{
-            Items = result.Items.Select(MapToDto).ToList(),
-            TotalCount = result.TotalCount,
-            Page = result.Page,
-            PageSize = result.PageSize
+            Items = pagedResult.Items.Select(MapToDto).ToList(),
+            TotalCount = pagedResult.TotalCount,
+            Page = pagedResult.Page,
+            PageSize = pagedResult.PageSize
         }};";
     }
 
@@ -542,21 +627,28 @@ public class PagedResult<T>
     {
         var rules = new List<string>();
         
-        foreach (var property in aggregate.Properties)
+        // Only validate properties that will be in the command (filtered)
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase));
+        
+        foreach (var property in filteredProperties)
         {
-            var propertyName = ToPascalCase(property.Name);
+            var propertyName = property.Name; // Use PascalCase directly
             
             if (property.Type == "string")
             {
-                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().MaximumLength(255);");
+                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().WithMessage(\"{propertyName} is required\");");
+                rules.Add($"RuleFor(x => x.{propertyName}).MaximumLength(100).WithMessage(\"{propertyName} cannot exceed 100 characters\");");
+            }
+            else if (property.Type == "int" || property.Type == "decimal")
+            {
+                rules.Add($"RuleFor(x => x.{propertyName}).GreaterThan(0).WithMessage(\"{propertyName} must be greater than 0\");");
             }
             else if (property.Type == "Guid")
             {
-                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty();");
-            }
-            else if (property.Type == "decimal")
-            {
-                rules.Add($"RuleFor(x => x.{propertyName}).GreaterThan(0);");
+                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().WithMessage(\"{propertyName} is required\");");
             }
         }
         
@@ -565,19 +657,33 @@ public class PagedResult<T>
 
     private string GenerateUpdateValidationRules(AggregateConfiguration aggregate)
     {
-        var rules = new List<string> { "RuleFor(x => x.Id).NotEmpty();" };
+        var rules = new List<string>();
         
-        foreach (var property in aggregate.Properties)
+        // Always validate Id for update operations
+        rules.Add("RuleFor(x => x.Id).NotEmpty().WithMessage(\"Id is required\");");
+        
+        // Only validate properties that will be in the command (filtered)
+        var filteredProperties = aggregate.Properties
+            .Where(p => !p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase) &&
+                       !p.Name.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase));
+        
+        foreach (var property in filteredProperties)
         {
-            var propertyName = ToPascalCase(property.Name);
+            var propertyName = property.Name; // Use PascalCase directly
             
             if (property.Type == "string")
             {
-                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().MaximumLength(255);");
+                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().WithMessage(\"{propertyName} is required\");");
+                rules.Add($"RuleFor(x => x.{propertyName}).MaximumLength(100).WithMessage(\"{propertyName} cannot exceed 100 characters\");");
             }
-            else if (property.Type == "decimal")
+            else if (property.Type == "int" || property.Type == "decimal")
             {
-                rules.Add($"RuleFor(x => x.{propertyName}).GreaterThan(0);");
+                rules.Add($"RuleFor(x => x.{propertyName}).GreaterThan(0).WithMessage(\"{propertyName} must be greater than 0\");");
+            }
+            else if (property.Type == "Guid")
+            {
+                rules.Add($"RuleFor(x => x.{propertyName}).NotEmpty().WithMessage(\"{propertyName} is required\");");
             }
         }
         
@@ -594,5 +700,19 @@ public class PagedResult<T>
     {
         if (string.IsNullOrEmpty(input)) return input;
         return char.ToUpperInvariant(input[0]) + input[1..];
+    }
+
+    private string GenerateNotFoundException(TemplateConfiguration config)
+    {
+        return $@"using System;
+
+namespace {config.Namespace}.Application.Common;
+
+public class NotFoundException : Exception
+{{
+    public NotFoundException(string message) : base(message)
+    {{
+    }}
+}}";
     }
 } 
