@@ -538,12 +538,3 @@ microkit list patterns --detailed
 - **Jaeger** (Distributed Tracing)
 
 ---
-
-## 🎯 **Następne Kroki**
-
-1. **Akceptacja planu** - czy to jest kierunek, który Ci odpowiada?
-2. **Priorytetyzacja** - które mikroserwisy najpierw?
-3. **CLI redesign** - czy zacząć od przepisania CLI?
-4. **Template patterns** - które wzorce są najważniejsze?
-
-**Czy chcesz, żebym rozwinął któryś z tych punktów lub zaczął implementację konkretnej części?** 

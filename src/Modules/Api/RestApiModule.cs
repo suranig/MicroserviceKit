@@ -553,7 +553,7 @@ public class {aggregate.Name}Controller : ControllerBase
         var response = await client.GetResponse<PagedResult<{aggregate.Name}Dto>>(query, cancellationToken);
         var result = response.Message;
         
-        var response = new PagedResponse<{aggregate.Name}Response>
+        var pagedResponse = new PagedResponse<{aggregate.Name}Response>
         {{
             Items = result.Items.Select(MapToResponse).ToList(),
             TotalCount = result.TotalCount,
@@ -562,7 +562,7 @@ public class {aggregate.Name}Controller : ControllerBase
             TotalPages = result.TotalPages
         }};
         
-        return Ok(response);
+        return Ok(pagedResponse);
     }}
 
     /// <summary>
