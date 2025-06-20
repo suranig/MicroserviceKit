@@ -1,0 +1,176 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "CQRS read side service with projections and optimized queries",
+  
+  "architecture": {
+    "pattern": "read-model",
+    "complexity": "medium",
+    "layers": ["Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "cqrsRead": {
+      "enabled": true,
+      "queryHandlers": true,
+      "projections": true,
+      "denormalizedViews": true
+    },
+    "eventProjections": {
+      "enabled": true,
+      "eventHandlers": true,
+      "projectionUpdates": true,
+      "eventSubscription": true
+    },
+    "optimizedQueries": {
+      "enabled": true,
+      "indexing": true,
+      "pagination": true,
+      "filtering": true,
+      "sorting": true
+    },
+    "caching": {
+      "enabled": true,
+      "distributedCache": true,
+      "queryResultCaching": true,
+      "cacheInvalidation": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [],
+    "domainServices": [],
+    "specifications": false,
+    "note": "Read models don't contain domain logic - only data projections"
+  },
+  
+  "application": {
+    "commands": [],
+    "queries": [
+      {
+        "name": "Get{{entityName}}ById",
+        "handler": "Get{{entityName}}ByIdHandler",
+        "returnType": "{{entityName}}ReadModel",
+        "caching": true
+      },
+      {
+        "name": "Get{{entityName}}List",
+        "handler": "Get{{entityName}}ListHandler",
+        "returnType": "PagedResult<{{entityName}}ReadModel>",
+        "pagination": true,
+        "filtering": true,
+        "sorting": true
+      },
+      {
+        "name": "Search{{entityName}}",
+        "handler": "Search{{entityName}}Handler",
+        "returnType": "List<{{entityName}}ReadModel>",
+        "fullTextSearch": true
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "{{entityName}}Created",
+        "handler": "{{entityName}}CreatedProjectionHandler",
+        "projectionUpdate": true
+      },
+      {
+        "event": "{{entityName}}Updated",
+        "handler": "{{entityName}}UpdatedProjectionHandler",
+        "projectionUpdate": true
+      },
+      {
+        "event": "{{entityName}}Deleted",
+        "handler": "{{entityName}}DeletedProjectionHandler",
+        "projectionUpdate": true
+      }
+    ],
+    "projections": [
+      {
+        "name": "{{entityName}}ReadModel",
+        "source": "{{entityName}}Events",
+        "properties": ["Id", "Name", "Status", "CreatedAt", "UpdatedAt"],
+        "indexes": ["Id", "Status", "CreatedAt"]
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "mongodb",
+      "eventStore": false,
+      "readModel": "mongodb",
+      "connectionString": "{{connectionString}}",
+      "collections": ["{{entityName}}ReadModels"]
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": false,
+      "eventSubscription": true,
+      "projectionUpdates": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "queryResultCaching": true,
+      "ttl": 300
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "{{entityName}}QueryController",
+        "actions": ["GetById", "GetList", "Search"],
+        "caching": true,
+        "compression": true
+      }
+    ],
+    "responseCompression": true,
+    "cors": true
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "projectionTests": true,
+    "queryPerformanceTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "hpa": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "queryPerformance": true
+    },
+    "tracing": true,
+    "queryMetrics": true
+  }
+} 
