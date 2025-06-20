@@ -174,6 +174,7 @@ public class ApplicationModule : ITemplateModule
     <PackageReference Include=""FluentValidation.DependencyInjectionExtensions"" Version=""11.9.0"" />
     <PackageReference Include=""MassTransit"" Version=""8.1.3"" />
     <PackageReference Include=""MassTransit.RabbitMQ"" Version=""8.1.3"" />
+    <PackageReference Include=""MediatR"" Version=""12.2.0"" />
     <PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />
     <PackageReference Include=""Microsoft.Extensions.Logging.Abstractions"" Version=""8.0.2"" />
   </ItemGroup>
@@ -191,7 +192,7 @@ public class ApplicationModule : ITemplateModule
         {
             "create" => GenerateCreateCommandParameters(aggregate),
             "update" => GenerateUpdateCommandParameters(aggregate),
-            "delete" => "Guid id",
+            "delete" => "Guid Id",
             _ => GenerateDefaultCommandParameters(aggregate)
         };
 
@@ -251,6 +252,7 @@ public record {operation}{aggregate.Name}Command({parameters});";
         return $@"using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Application.Common;
 using MassTransit;
+using MediatR;
 
 namespace {config.Namespace}.Application.{aggregate.Name}.Commands.{operation}{aggregate.Name};
 
@@ -268,7 +270,7 @@ public class {operation}{aggregate.Name}CommandHandler : IConsumer<{operation}{a
         var command = context.Message;
         {handlerLogic}
         
-        {(returnType == "Guid" ? "await context.RespondAsync(entity.Id);" : "")}
+        {(returnType == "Guid" ? "await context.RespondAsync(entity.Id);" : "await context.RespondAsync(Unit.Value);")}
     }}
 }}";
     }
@@ -609,7 +611,7 @@ public class PagedResult<T>
 
     private string GenerateDeleteLogic(AggregateConfiguration aggregate)
     {
-        return $@"var entity = await _repository.GetByIdAsync(command.id, context.CancellationToken);
+        return $@"var entity = await _repository.GetByIdAsync(command.Id, context.CancellationToken);
         if (entity == null)
             throw new NotFoundException(""{aggregate.Name} not found"");
             
