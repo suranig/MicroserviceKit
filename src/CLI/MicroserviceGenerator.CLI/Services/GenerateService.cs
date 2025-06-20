@@ -35,13 +35,14 @@ public class GenerateService
         services.AddSingleton<ITemplateModule, Microservice.Modules.DDD.DDDModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.Application.ApplicationModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.Infrastructure.InfrastructureModule>();
-        services.AddSingleton<ITemplateModule, Microservice.Modules.Api.ApiModule>();
+        // services.AddSingleton<ITemplateModule, Microservice.Modules.Api.ApiModule>(); // Disabled - conflicts with RestApiModule
         services.AddSingleton<ITemplateModule, Microservice.Modules.Api.RestApiModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.ExternalServices.ExternalServicesModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.Messaging.MessagingModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.ReadModels.ReadModelsModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.Tests.UnitTestModule>();
         services.AddSingleton<ITemplateModule, Microservice.Modules.Tests.IntegrationTestModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Docker.DockerModule>();
         
         return services.BuildServiceProvider();
     }
@@ -95,6 +96,24 @@ public class GenerateService
         config.OutputPath = options.OutputPath;
         config.Namespace = $"{options.ServiceName}";
         
+        // Replace placeholders in domain aggregates
+        if (config.Domain?.Aggregates != null)
+        {
+            foreach (var aggregate in config.Domain.Aggregates)
+            {
+                if (aggregate.Name == "{{aggregateName}}")
+                {
+                    // Use service name as aggregate name (remove "Service" suffix if present)
+                    var aggregateName = options.ServiceName.EndsWith("Service", StringComparison.OrdinalIgnoreCase)
+                        ? options.ServiceName[..^7] // Remove "Service" suffix
+                        : options.ServiceName;
+                    
+                    // Ensure PascalCase
+                    aggregate.Name = char.ToUpper(aggregateName[0]) + aggregateName[1..];
+                }
+            }
+        }
+        
         // Set up project structure configuration
         config.ProjectStructure = new ProjectStructureConfiguration
         {
@@ -117,6 +136,8 @@ public class GenerateService
                     Properties = new List<PropertyConfiguration>
                     {
                         new() { Name = "Id", Type = "Guid", IsRequired = true },
+                        new() { Name = "Name", Type = "string", IsRequired = true },
+                        new() { Name = "Description", Type = "string", IsRequired = false },
                         new() { Name = "CreatedAt", Type = "DateTime", IsRequired = true },
                         new() { Name = "UpdatedAt", Type = "DateTime", IsRequired = false }
                     },
