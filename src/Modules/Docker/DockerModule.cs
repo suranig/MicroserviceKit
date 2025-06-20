@@ -22,7 +22,7 @@ namespace Microservice.Modules.Docker
 
         public bool IsEnabled(TemplateConfiguration config)
         {
-            return config.Features?.Deployment?.Docker == "enabled";
+            return config.Deployment?.Docker?.Enabled == true;
         }
 
         public async Task GenerateAsync(GenerationContext context)
