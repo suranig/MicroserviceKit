@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>microkit</ToolCommandName>
     <PackageId>MicroserviceKit</PackageId>
-    <Version>0.4.4</Version>
+    <Version>0.4.5</Version>
     <Authors>Paweł Pilichowski</Authors>
     <Description>🚀 Complete toolkit for generating production-ready .NET 8 microservices with DDD, CQRS, Clean Architecture, Event-Driven Architecture, and comprehensive infrastructure. Generate enterprise-grade microservices with REST APIs, CQRS, MongoDB read models, RabbitMQ messaging, external service integration, Docker, and complete testing suite.</Description>
     <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;event-driven;mongodb;rabbitmq;docker;enterprise;microkit</PackageTags>
@@ -17,7 +17,7 @@
     <RepositoryUrl>https://github.com/suranig/microservice-net8-ddd</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>🐛 v0.4.4 - Critical Compilation Fix: Fixed duplicate variable declaration in CQRS controllers causing CS0128 compilation errors. All generated controllers now compile successfully without variable naming conflicts.</PackageReleaseNotes>
+    <PackageReleaseNotes>🚀 v0.4.5 - Templates Included: Fixed missing templates in NuGet package. All microservice templates are now properly included and accessible via CLI commands (list, describe, generate).</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\templates\**\*" Pack="true" PackagePath="templates\" />
   </ItemGroup>
 
   <ItemGroup>
