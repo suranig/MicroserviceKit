@@ -1,0 +1,255 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Multi-tenancy service with tenant isolation and configuration management",
+  
+  "architecture": {
+    "pattern": "multi-tenant",
+    "complexity": "enterprise",
+    "layers": ["Domain", "Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "multiTenancy": {
+      "enabled": true,
+      "tenantIsolation": "database-per-tenant",
+      "tenantResolution": "domain-based",
+      "tenantConfiguration": true
+    },
+    "tenantIsolation": {
+      "enabled": true,
+      "dataIsolation": true,
+      "securityIsolation": true,
+      "performanceIsolation": true
+    },
+    "configurationPerTenant": {
+      "enabled": true,
+      "dynamicConfiguration": true,
+      "featureFlags": true,
+      "customization": true
+    },
+    "domainRouting": {
+      "enabled": true,
+      "subdomainRouting": true,
+      "customDomains": true,
+      "sslCertificates": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Tenant",
+        "entities": ["Tenant", "TenantConfiguration", "TenantDomain"],
+        "valueObjects": ["TenantId", "DomainName", "TenantStatus", "TenantPlan"],
+        "domainEvents": [
+          "TenantCreated",
+          "TenantActivated",
+          "TenantConfigurationUpdated",
+          "TenantDomainAdded",
+          "TenantSuspended"
+        ]
+      },
+      {
+        "name": "TenantUser",
+        "entities": ["TenantUser", "TenantRole"],
+        "valueObjects": ["TenantUserId", "TenantUserStatus"],
+        "domainEvents": [
+          "TenantUserInvited",
+          "TenantUserActivated",
+          "TenantUserRoleChanged"
+        ]
+      }
+    ],
+    "domainServices": [
+      "TenantResolver",
+      "TenantConfigurationManager",
+      "DomainValidator"
+    ],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "CreateTenant",
+        "handler": "CreateTenantHandler",
+        "validation": true
+      },
+      {
+        "name": "UpdateTenantConfiguration",
+        "handler": "UpdateTenantConfigurationHandler",
+        "validation": true
+      },
+      {
+        "name": "AddTenantDomain",
+        "handler": "AddTenantDomainHandler",
+        "validation": true
+      },
+      {
+        "name": "InviteTenantUser",
+        "handler": "InviteTenantUserHandler",
+        "validation": true
+      },
+      {
+        "name": "SuspendTenant",
+        "handler": "SuspendTenantHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "GetTenantById",
+        "handler": "GetTenantByIdHandler",
+        "returnType": "TenantDto"
+      },
+      {
+        "name": "GetTenantByDomain",
+        "handler": "GetTenantByDomainHandler",
+        "returnType": "TenantDto"
+      },
+      {
+        "name": "GetTenantConfiguration",
+        "handler": "GetTenantConfigurationHandler",
+        "returnType": "TenantConfigurationDto"
+      },
+      {
+        "name": "GetTenantUsers",
+        "handler": "GetTenantUsersHandler",
+        "returnType": "List<TenantUserDto>",
+        "pagination": true
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "TenantCreated",
+        "handler": "TenantCreatedHandler"
+      },
+      {
+        "event": "TenantConfigurationUpdated",
+        "handler": "TenantConfigurationUpdatedHandler"
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": false,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}",
+      "multiTenancy": {
+        "strategy": "database-per-tenant",
+        "sharedTables": ["Tenants", "TenantDomains"],
+        "tenantTables": ["TenantUsers", "TenantConfigurations"]
+      }
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": true,
+      "tenantRouting": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "tenantCache": true,
+      "configurationCache": true,
+      "ttl": 1800
+    },
+    "domainManagement": {
+      "dnsProvider": "cloudflare",
+      "sslProvider": "letsencrypt",
+      "certificateManagement": true
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "tenant-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "TenantController",
+        "actions": ["Create", "Update", "GetById", "GetByDomain"],
+        "authorization": "system-admin"
+      },
+      {
+        "name": "TenantConfigurationController",
+        "actions": ["GetConfiguration", "UpdateConfiguration"],
+        "authorization": "tenant-admin"
+      },
+      {
+        "name": "TenantUserController",
+        "actions": ["Invite", "GetUsers", "UpdateRole"],
+        "authorization": "tenant-admin"
+      },
+      {
+        "name": "TenantDomainController",
+        "actions": ["AddDomain", "VerifyDomain", "RemoveDomain"],
+        "authorization": "tenant-admin"
+      }
+    ],
+    "tenantResolution": {
+      "strategy": "domain-based",
+      "fallback": "subdomain",
+      "middleware": "TenantResolutionMiddleware"
+    }
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "multiTenantTests": true,
+    "isolationTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "ingress": true,
+      "certificateManager": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "tenantId": true,
+      "tenantOperations": true
+    },
+    "tracing": true,
+    "tenantMetrics": {
+      "tenantCount": true,
+      "activeUsers": true,
+      "configurationChanges": true,
+      "domainVerifications": true
+    }
+  },
+  
+  "security": {
+    "tenantIsolation": true,
+    "dataEncryption": true,
+    "accessControl": "tenant-based",
+    "auditLogging": true,
+    "complianceReporting": true
+  }
+} 

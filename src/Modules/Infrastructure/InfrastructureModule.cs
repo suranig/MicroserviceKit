@@ -18,84 +18,77 @@ public class InfrastructureModule : ITemplateModule
     public async Task GenerateAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var outputPath = context.GetInfrastructureProjectPath();
 
         // Create project structure
-        await CreateProjectStructureAsync(outputPath, config);
+        await CreateProjectStructureAsync(context, config);
 
         // Generate DbContext
-        await GenerateDbContextAsync(outputPath, config);
+        await GenerateDbContextAsync(context, config);
 
         // Generate repositories for each aggregate
         if (config.Domain?.Aggregates != null)
         {
             foreach (var aggregate in config.Domain.Aggregates)
             {
-                await GenerateRepositoryAsync(outputPath, config, aggregate);
-                await GenerateEntityConfigurationAsync(outputPath, config, aggregate);
+                await GenerateRepositoryAsync(context, config, aggregate);
+                await GenerateEntityConfigurationAsync(context, config, aggregate);
             }
         }
 
         // Generate infrastructure extensions
-        await GenerateInfrastructureExtensionsAsync(outputPath, config);
+        await GenerateInfrastructureExtensionsAsync(context, config);
 
         // Generate database configuration
-        await GenerateDatabaseConfigurationAsync(outputPath, config);
+        await GenerateDatabaseConfigurationAsync(context, config);
     }
 
-    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task CreateProjectStructureAsync(GenerationContext context, TemplateConfiguration config)
     {
-        Directory.CreateDirectory(outputPath);
-        Directory.CreateDirectory(Path.Combine(outputPath, "Persistence"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Persistence", "Configurations"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Repositories"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Extensions"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Migrations"));
+        Directory.CreateDirectory(context.GetInfrastructureProjectPath());
+        Directory.CreateDirectory(Path.Combine(context.GetInfrastructureProjectPath(), "Persistence"));
+        Directory.CreateDirectory(Path.Combine(context.GetInfrastructureProjectPath(), "Persistence", "Configurations"));
+        Directory.CreateDirectory(Path.Combine(context.GetInfrastructureProjectPath(), "Repositories"));
+        Directory.CreateDirectory(Path.Combine(context.GetInfrastructureProjectPath(), "Extensions"));
+        Directory.CreateDirectory(Path.Combine(context.GetInfrastructureProjectPath(), "Migrations"));
 
-        // Generate .csproj file
+        // Generate .csproj file using relative path
         var csprojContent = GenerateProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, $"{config.MicroserviceName}.Infrastructure.csproj"), csprojContent);
+        await context.WriteFileAsync($"src/Infrastructure/{config.MicroserviceName}.Infrastructure.csproj", csprojContent);
     }
 
-    private async Task GenerateDbContextAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateDbContextAsync(GenerationContext context, TemplateConfiguration config)
     {
         var dbContextContent = GenerateDbContext(config);
-        var dbContextPath = Path.Combine(outputPath, "Persistence", "ApplicationDbContext.cs");
-        await File.WriteAllTextAsync(dbContextPath, dbContextContent);
+        await context.WriteFileAsync("src/Infrastructure/Persistence/ApplicationDbContext.cs", dbContextContent);
     }
 
-    private async Task GenerateRepositoryAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateRepositoryAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
         // Generate repository interface
         var repositoryInterfaceContent = GenerateRepositoryInterface(config, aggregate);
-        var interfacePath = Path.Combine(outputPath, "Repositories", $"I{aggregate.Name}Repository.cs");
-        await File.WriteAllTextAsync(interfacePath, repositoryInterfaceContent);
+        await context.WriteFileAsync($"src/Infrastructure/Repositories/I{aggregate.Name}Repository.cs", repositoryInterfaceContent);
 
         // Generate repository implementation
         var repositoryContent = GenerateRepository(config, aggregate);
-        var repositoryPath = Path.Combine(outputPath, "Repositories", $"{aggregate.Name}Repository.cs");
-        await File.WriteAllTextAsync(repositoryPath, repositoryContent);
+        await context.WriteFileAsync($"src/Infrastructure/Repositories/{aggregate.Name}Repository.cs", repositoryContent);
     }
 
-    private async Task GenerateEntityConfigurationAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateEntityConfigurationAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
         var configurationContent = GenerateEntityConfiguration(config, aggregate);
-        var configPath = Path.Combine(outputPath, "Persistence", "Configurations", $"{aggregate.Name}Configuration.cs");
-        await File.WriteAllTextAsync(configPath, configurationContent);
+        await context.WriteFileAsync($"src/Infrastructure/Persistence/Configurations/{aggregate.Name}Configuration.cs", configurationContent);
     }
 
-    private async Task GenerateInfrastructureExtensionsAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateInfrastructureExtensionsAsync(GenerationContext context, TemplateConfiguration config)
     {
         var extensionsContent = GenerateInfrastructureExtensions(config);
-        var extensionsPath = Path.Combine(outputPath, "Extensions", "ServiceCollectionExtensions.cs");
-        await File.WriteAllTextAsync(extensionsPath, extensionsContent);
+        await context.WriteFileAsync("src/Infrastructure/Extensions/ServiceCollectionExtensions.cs", extensionsContent);
     }
 
-    private async Task GenerateDatabaseConfigurationAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateDatabaseConfigurationAsync(GenerationContext context, TemplateConfiguration config)
     {
         var configContent = GenerateDatabaseConfiguration(config);
-        var configPath = Path.Combine(outputPath, "Persistence", "DatabaseConfiguration.cs");
-        await File.WriteAllTextAsync(configPath, configContent);
+        await context.WriteFileAsync("src/Infrastructure/Persistence/DatabaseConfiguration.cs", configContent);
     }
 
     private string GenerateProjectFile(TemplateConfiguration config)
@@ -104,29 +97,30 @@ public class InfrastructureModule : ITemplateModule
         
         var packages = new List<string>
         {
-            @"<PackageReference Include=""Microsoft.EntityFrameworkCore"" Version=""8.0.16"" />",
-            @"<PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.16"" />",
-            @"<PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.2"" />",
-            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />"
+            @"<PackageReference Include=""Microsoft.EntityFrameworkCore"" Version=""8.0.10"" />",
+            @"<PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.10"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.0"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"" Version=""8.0.10"" />"
         };
 
         // Add provider-specific packages
         switch (provider)
         {
             case "postgresql":
-                packages.Add(@"<PackageReference Include=""Npgsql.EntityFrameworkCore.PostgreSQL"" Version=""8.0.16"" />");
+                packages.Add(@"<PackageReference Include=""Npgsql.EntityFrameworkCore.PostgreSQL"" Version=""8.0.10"" />");
                 break;
             case "sqlserver":
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.SqlServer"" Version=""8.0.16"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.SqlServer"" Version=""8.0.10"" />");
                 break;
             case "mysql":
                 packages.Add(@"<PackageReference Include=""Pomelo.EntityFrameworkCore.MySql"" Version=""8.0.2"" />");
                 break;
             case "sqlite":
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.Sqlite"" Version=""8.0.16"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.Sqlite"" Version=""8.0.10"" />");
                 break;
             default:
-                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.InMemory"" Version=""8.0.16"" />");
+                packages.Add(@"<PackageReference Include=""Microsoft.EntityFrameworkCore.InMemory"" Version=""8.0.10"" />");
                 break;
         }
 
@@ -143,14 +137,12 @@ public class InfrastructureModule : ITemplateModule
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include=""..\..\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />
-    <ProjectReference Include=""..\..\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />
+    <ProjectReference Include=""..\Domain\{config.MicroserviceName}.Domain.csproj"" />
+    <ProjectReference Include=""..\Application\{config.MicroserviceName}.Application.csproj"" />
   </ItemGroup>
 
 </Project>";
     }
-
-
 
     private string GenerateDbContext(TemplateConfiguration config)
     {
@@ -162,7 +154,7 @@ public class InfrastructureModule : ITemplateModule
             $"modelBuilder.ApplyConfiguration(new {a.Name}Configuration());"));
 
         return $@"using Microsoft.EntityFrameworkCore;
-using {config.Namespace}.Domain.{string.Join($";\nusing {config.Namespace}.Domain.", aggregates.Select(a => a.Name))};
+using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Infrastructure.Persistence.Configurations;
 
 namespace {config.Namespace}.Infrastructure.Persistence;
@@ -207,8 +199,7 @@ public class ApplicationDbContext : DbContext
             {{
                 auditableEntity.CreatedAt = DateTime.UtcNow;
             }}
-            
-            if (entry.State == EntityState.Modified)
+            else if (entry.State == EntityState.Modified)
             {{
                 auditableEntity.UpdatedAt = DateTime.UtcNow;
             }}
@@ -227,7 +218,7 @@ public interface IAuditableEntity
 
     private string GenerateRepositoryInterface(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        return $@"using {config.Namespace}.Domain.{aggregate.Name};
+        return $@"using {config.Namespace}.Domain.Entities;
 
 namespace {config.Namespace}.Infrastructure.Repositories;
 
@@ -247,7 +238,7 @@ public interface I{aggregate.Name}Repository
     private string GenerateRepository(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
         return $@"using Microsoft.EntityFrameworkCore;
-using {config.Namespace}.Domain.{aggregate.Name};
+using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Infrastructure.Persistence;
 
 namespace {config.Namespace}.Infrastructure.Repositories;
@@ -318,7 +309,7 @@ public class {aggregate.Name}Repository : I{aggregate.Name}Repository
 
         return $@"using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using {config.Namespace}.Domain.{aggregate.Name};
+using {config.Namespace}.Domain.Entities;
 
 namespace {config.Namespace}.Infrastructure.Persistence.Configurations;
 

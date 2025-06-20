@@ -34,22 +34,23 @@ public class DDDModule : ITemplateModule
                 await GenerateValueObjectAsync(context, valueObject);
             }
         }
+
+        if (context.Configuration.Domain?.Enums != null)
+        {
+            foreach (var enumConfig in context.Configuration.Domain.Enums)
+            {
+                await GenerateEnumAsync(context, enumConfig);
+            }
+        }
     }
 
     private async Task CreateDomainProjectStructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var domainPath = context.GetDomainProjectPath();
 
-        // Create directories
-        Directory.CreateDirectory(Path.Combine(domainPath, "Entities"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "Events"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "ValueObjects"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "Interfaces"));
-
-        // Generate .csproj file
+        // Generate .csproj file using relative path
         var csprojContent = GenerateDomainProjectFile(config);
-        await context.WriteFileAsync($"{domainPath}/{config.MicroserviceName}.Domain.csproj", csprojContent);
+        await context.WriteFileAsync($"src/Domain/{config.MicroserviceName}.Domain.csproj", csprojContent);
     }
 
     private string GenerateDomainProjectFile(TemplateConfiguration config)
@@ -72,15 +73,26 @@ public class DDDModule : ITemplateModule
     private async Task GenerateAggregateAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var template = GetAggregateTemplate();
+        var hasEnums = context.Configuration.Domain?.Enums?.Any() == true;
+        var hasValueObjects = context.Configuration.Domain?.ValueObjects?.Any() == true;
+        
+        var additionalUsings = new List<string>();
+        if (hasEnums)
+            additionalUsings.Add($"using {context.Configuration.Namespace}.Domain.Enums;");
+        if (hasValueObjects)
+            additionalUsings.Add($"using {context.Configuration.Namespace}.Domain.ValueObjects;");
+        
+        var allUsings = string.Join("\n", additionalUsings);
+        
         var content = template
             .Replace("{{Namespace}}", context.Configuration.Namespace)
             .Replace("{{AggregateName}}", aggregate.Name)
             .Replace("{{Properties}}", GenerateProperties(aggregate.Properties))
             .Replace("{{Constructor}}", GenerateConstructor(aggregate))
-            .Replace("{{Methods}}", GenerateMethods(aggregate));
+            .Replace("{{Methods}}", GenerateMethods(aggregate))
+            .Replace("{{AdditionalUsings}}", allUsings);
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/Entities/{aggregate.Name}.cs", content);
+        await context.WriteFileAsync($"src/Domain/Entities/{aggregate.Name}.cs", content);
     }
 
     private async Task GenerateAggregateEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
@@ -92,8 +104,7 @@ public class DDDModule : ITemplateModule
             .Replace("{{EventName}}", $"{aggregate.Name}CreatedEvent")
             .Replace("{{Parameters}}", $"Guid aggregateId");
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
+        await context.WriteFileAsync($"src/Domain/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
     }
 
     private async Task GenerateValueObjectAsync(GenerationContext context, ValueObjectConfiguration valueObject)
@@ -106,14 +117,33 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateValueObjectConstructor(valueObject))
             .Replace("{{EqualityComponents}}", GenerateEqualityComponents(valueObject.Properties));
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/ValueObjects/{valueObject.Name}.cs", content);
+        await context.WriteFileAsync($"src/Domain/ValueObjects/{valueObject.Name}.cs", content);
+    }
+
+    private async Task GenerateEnumAsync(GenerationContext context, EnumConfiguration enumConfig)
+    {
+        var template = GetEnumTemplate();
+        var content = template
+            .Replace("{{Namespace}}", context.Configuration.Namespace)
+            .Replace("{{EnumName}}", enumConfig.Name)
+            .Replace("{{EnumValues}}", GenerateEnumValues(enumConfig.Values));
+
+        await context.WriteFileAsync($"src/Domain/Enums/{enumConfig.Name}.cs", content);
     }
 
     private string GenerateProperties(List<PropertyConfiguration> properties)
     {
-        return string.Join("\n    ", properties.Select(p => 
-            $"public {p.Type} {p.Name} {{ get; private set; }}"));
+        var customProperties = properties.Select(p => 
+            $"public {p.Type} {p.Name} {{ get; private set; }}");
+        
+        // Add audit properties that are expected by Application layer
+        var auditProperties = new[]
+        {
+            "public DateTime CreatedAt { get; private set; }",
+            "public DateTime? UpdatedAt { get; private set; }"
+        };
+        
+        return string.Join("\n    ", customProperties.Concat(auditProperties));
     }
 
     private string GenerateConstructor(AggregateConfiguration aggregate)
@@ -124,6 +154,8 @@ public class DDDModule : ITemplateModule
         return $@"public {aggregate.Name}({parameters}) : base(Guid.NewGuid())
     {{
         {assignments}
+        CreatedAt = DateTime.UtcNow;
+        UpdatedAt = null;
         
         AddDomainEvent(new {aggregate.Name}CreatedEvent(Id));
     }}";
@@ -152,6 +184,11 @@ public class DDDModule : ITemplateModule
         return string.Join("\n        ", properties.Select(p => $"yield return {p.Name};"));
     }
 
+    private string GenerateEnumValues(List<string> values)
+    {
+        return string.Join(",\n    ", values);
+    }
+
     private string GenerateEventParameters(List<PropertyConfiguration> properties)
     {
         return string.Join(", ", properties.Select(p => $"{p.Type} {p.Name}"));
@@ -161,6 +198,7 @@ public class DDDModule : ITemplateModule
     {
         return @"using AggregateKit;
 using {{Namespace}}.Domain.Events;
+{{AdditionalUsings}}
 
 namespace {{Namespace}}.Domain.Entities;
 
@@ -209,6 +247,16 @@ public class {{ValueObjectName}} : ValueObject
     {
         {{EqualityComponents}}
     }
+}";
+    }
+
+    private string GetEnumTemplate()
+    {
+        return @"namespace {{Namespace}}.Domain.Enums;
+
+public enum {{EnumName}}
+{
+    {{EnumValues}}
 }";
     }
 } 

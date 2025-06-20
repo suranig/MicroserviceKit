@@ -1,0 +1,210 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Search service with indexing capabilities and full-text search using Elasticsearch",
+  
+  "architecture": {
+    "pattern": "search-indexing",
+    "complexity": "medium",
+    "layers": ["Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "elasticsearch": {
+      "enabled": true,
+      "indexing": true,
+      "fullTextSearch": true,
+      "aggregations": true,
+      "suggestions": true
+    },
+    "searchIndexing": {
+      "enabled": true,
+      "realTimeIndexing": true,
+      "bulkIndexing": true,
+      "indexOptimization": true
+    },
+    "eventDriven": {
+      "enabled": true,
+      "eventSubscription": true,
+      "indexUpdates": true,
+      "eventHandlers": true
+    },
+    "analytics": {
+      "enabled": true,
+      "searchMetrics": true,
+      "queryAnalytics": true,
+      "performanceTracking": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [],
+    "domainServices": [
+      "SearchIndexer",
+      "QueryBuilder",
+      "SearchAnalyzer"
+    ],
+    "specifications": false,
+    "note": "Search service focuses on indexing and querying - minimal domain logic"
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "IndexDocument",
+        "handler": "IndexDocumentHandler",
+        "validation": true
+      },
+      {
+        "name": "BulkIndexDocuments",
+        "handler": "BulkIndexDocumentsHandler",
+        "validation": true
+      },
+      {
+        "name": "DeleteFromIndex",
+        "handler": "DeleteFromIndexHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "SearchDocuments",
+        "handler": "SearchDocumentsHandler",
+        "returnType": "SearchResult<DocumentDto>",
+        "pagination": true,
+        "filtering": true,
+        "sorting": true
+      },
+      {
+        "name": "GetSuggestions",
+        "handler": "GetSuggestionsHandler",
+        "returnType": "List<SuggestionDto>"
+      },
+      {
+        "name": "GetSearchAnalytics",
+        "handler": "GetSearchAnalyticsHandler",
+        "returnType": "SearchAnalyticsDto"
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "DocumentCreated",
+        "handler": "DocumentCreatedIndexHandler",
+        "indexOperation": "create"
+      },
+      {
+        "event": "DocumentUpdated",
+        "handler": "DocumentUpdatedIndexHandler",
+        "indexOperation": "update"
+      },
+      {
+        "event": "DocumentDeleted",
+        "handler": "DocumentDeletedIndexHandler",
+        "indexOperation": "delete"
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "elasticsearch": {
+      "enabled": true,
+      "version": "8.x",
+      "connectionString": "{{elasticsearchUrl}}",
+      "indexes": [
+        {
+          "name": "{{indexName}}",
+          "mappings": true,
+          "settings": true,
+          "aliases": true
+        }
+      ]
+    },
+    "database": {
+      "provider": "postgresql",
+      "eventStore": false,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}",
+      "usage": "search-analytics"
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": false,
+      "eventSubscription": true,
+      "indexingQueue": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "searchResultCache": true,
+      "ttl": 300
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "SearchController",
+        "actions": ["Search", "Suggest", "Analytics"],
+        "caching": true,
+        "compression": true
+      },
+      {
+        "name": "IndexController",
+        "actions": ["Index", "BulkIndex", "Delete"],
+        "authentication": "admin-only"
+      }
+    ],
+    "responseCompression": true,
+    "cors": true
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "searchTests": true,
+    "performanceTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "hpa": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "searchQueries": true,
+      "indexingOperations": true
+    },
+    "tracing": true,
+    "searchMetrics": {
+      "queryCount": true,
+      "responseTime": true,
+      "indexSize": true,
+      "searchAccuracy": true
+    }
+  }
+} 

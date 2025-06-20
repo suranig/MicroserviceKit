@@ -10,6 +10,7 @@ public class TemplateConfiguration
     public FeaturesConfiguration? Features { get; set; }
     public DomainConfiguration? Domain { get; set; }
     public ProjectStructureConfiguration? ProjectStructure { get; set; }
+    public DeploymentConfiguration? Deployment { get; set; }
     
     // Helper methods for simple access
     public string GetDatabaseProvider()
@@ -82,6 +83,7 @@ public class DomainConfiguration
 {
     public List<AggregateConfiguration>? Aggregates { get; set; }
     public List<ValueObjectConfiguration>? ValueObjects { get; set; }
+    public List<EnumConfiguration>? Enums { get; set; }
 }
 
 public class AggregateConfiguration
@@ -102,6 +104,12 @@ public class ValueObjectConfiguration
 {
     public string Name { get; set; } = string.Empty;
     public List<PropertyConfiguration> Properties { get; set; } = new();
+}
+
+public class EnumConfiguration
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Values { get; set; } = new();
 }
 
 public class ApiConfiguration
@@ -134,8 +142,24 @@ public class ObservabilityConfiguration
 
 public class DeploymentConfiguration
 {
-    public string? Docker { get; set; } = "auto"; // auto | enabled | disabled
-    public string? HealthChecks { get; set; } = "auto";
+    public DockerConfiguration? Docker { get; set; }
+    public KubernetesConfiguration? Kubernetes { get; set; }
+}
+
+public class DockerConfiguration
+{
+    public bool Enabled { get; set; } = false;
+    public bool MultiStage { get; set; } = true;
+    public bool HealthCheck { get; set; } = true;
+}
+
+public class KubernetesConfiguration
+{
+    public bool Enabled { get; set; } = false;
+    public bool Deployment { get; set; } = true;
+    public bool Service { get; set; } = true;
+    public bool ConfigMap { get; set; } = true;
+    public bool Secrets { get; set; } = true;
 }
 
 public class TestingConfiguration

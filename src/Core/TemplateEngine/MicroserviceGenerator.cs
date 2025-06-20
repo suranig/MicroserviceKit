@@ -6,6 +6,7 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using Microservice.Core.TemplateEngine.Configuration;
 using Microservice.Core.TemplateEngine.Abstractions;
+using System.Linq;
 
 namespace Microservice.Core.TemplateEngine
 {
@@ -13,13 +14,13 @@ namespace Microservice.Core.TemplateEngine
     {
         private readonly GenerationContext _context;
         private readonly TemplateConfiguration _configuration;
-        private readonly ILogger<MicroserviceGenerator> _logger;
+        private readonly ILogger _logger;
         private readonly IEnumerable<ITemplateModule> _modules;
 
         public MicroserviceGenerator(
             GenerationContext context,
             TemplateConfiguration configuration,
-            ILogger<MicroserviceGenerator> logger,
+            ILogger logger,
             IEnumerable<ITemplateModule> modules)
         {
             _context = context;
@@ -64,21 +65,39 @@ namespace Microservice.Core.TemplateEngine
             sb.AppendLine("VisualStudioVersion = 17.0.31903.59");
             sb.AppendLine("MinimumVisualStudioVersion = 10.0.40219.1");
 
-            // Add projects
+            // Get enabled modules and their corresponding projects
+            var enabledModules = _modules.Where(m => m.IsEnabled(_configuration)).ToList();
             var sourceDir = _configuration.ProjectStructure?.SourceDirectory ?? "src";
-            var projects = new[]
+            var projects = new List<(string Name, string Path, string Guid)>();
+
+            // Map modules to their project files
+            foreach (var module in enabledModules)
             {
-                new { Name = "Domain", Path = Path.Combine(sourceDir, "Domain", $"{_configuration.MicroserviceName}.Domain.csproj") },
-                new { Name = "Application", Path = Path.Combine(sourceDir, "Application", $"{_configuration.MicroserviceName}.Application.csproj") },
-                new { Name = "Infrastructure", Path = Path.Combine(sourceDir, "Infrastructure", $"{_configuration.MicroserviceName}.Infrastructure.csproj") },
-                new { Name = "Api", Path = Path.Combine(sourceDir, "Api", $"{_configuration.MicroserviceName}.Api.csproj") },
-                new { Name = "Tests", Path = Path.Combine("tests", $"{_configuration.MicroserviceName}.Tests.csproj") }
-            };
+                switch (module.Name.ToLowerInvariant())
+                {
+                    case "ddd":
+                        projects.Add(("Domain", Path.Combine(sourceDir, "Domain", $"{_configuration.MicroserviceName}.Domain.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "application":
+                        projects.Add(("Application", Path.Combine(sourceDir, "Application", $"{_configuration.MicroserviceName}.Application.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "infrastructure":
+                        projects.Add(("Infrastructure", Path.Combine(sourceDir, "Infrastructure", $"{_configuration.MicroserviceName}.Infrastructure.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "restapi":
+                    case "api":
+                        projects.Add(("Api", Path.Combine(sourceDir, "Api", $"{_configuration.MicroserviceName}.Api.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "unittests":
+                    case "tests":
+                        projects.Add(("Tests", Path.Combine("tests", $"{_configuration.MicroserviceName}.Tests.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                }
+            }
 
             foreach (var project in projects)
             {
-                var projectGuid = Guid.NewGuid().ToString("B").ToUpper();
-                sb.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{project.Name}\", \"{project.Path}\", \"{projectGuid}\"");
+                sb.AppendLine($"Project(\"{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}\") = \"{project.Name}\", \"{project.Path}\", \"{project.Guid}\"");
                 sb.AppendLine("EndProject");
             }
 
@@ -92,11 +111,10 @@ namespace Microservice.Core.TemplateEngine
             sb.AppendLine("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution");
             foreach (var project in projects)
             {
-                var projectGuid = Guid.NewGuid().ToString("B").ToUpper();
-                sb.AppendLine($"\t\t{projectGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU");
-                sb.AppendLine($"\t\t{projectGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU");
-                sb.AppendLine($"\t\t{projectGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU");
-                sb.AppendLine($"\t\t{projectGuid}.Release|Any CPU.Build.0 = Release|Any CPU");
+                sb.AppendLine($"\t\t{project.Guid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU");
+                sb.AppendLine($"\t\t{project.Guid}.Debug|Any CPU.Build.0 = Debug|Any CPU");
+                sb.AppendLine($"\t\t{project.Guid}.Release|Any CPU.ActiveCfg = Release|Any CPU");
+                sb.AppendLine($"\t\t{project.Guid}.Release|Any CPU.Build.0 = Release|Any CPU");
             }
             sb.AppendLine("\tEndGlobalSection");
 

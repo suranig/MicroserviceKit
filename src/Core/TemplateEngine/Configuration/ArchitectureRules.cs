@@ -129,12 +129,7 @@ public static class ArchitectureRules
     
     private static bool ShouldEnableDocker(TemplateConfiguration config, ArchitectureLevel level)
     {
-        return config.Features?.Deployment?.Docker switch
-        {
-            "enabled" => true,
-            "disabled" => false,
-            _ => level >= ArchitectureLevel.Standard // auto
-        };
+        return config.Deployment?.Docker?.Enabled ?? (level >= ArchitectureLevel.Standard);
     }
     
     private static bool ShouldEnableInfrastructure(TemplateConfiguration config, ArchitectureLevel level)

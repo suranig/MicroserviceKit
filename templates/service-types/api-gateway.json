@@ -1,0 +1,208 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "API Gateway with routing, authentication, rate limiting, and cross-cutting concerns",
+  
+  "architecture": {
+    "pattern": "api-gateway",
+    "complexity": "enterprise",
+    "layers": ["Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "routing": {
+      "enabled": true,
+      "dynamicRouting": true,
+      "loadBalancing": true,
+      "serviceDiscovery": true
+    },
+    "authentication": {
+      "enabled": true,
+      "jwt": true,
+      "oauth2": true,
+      "apiKeys": true,
+      "basicAuth": true
+    },
+    "authorization": {
+      "enabled": true,
+      "policyBased": true,
+      "roleBased": true,
+      "scopeBased": true
+    },
+    "rateLimiting": {
+      "enabled": true,
+      "perClient": true,
+      "perEndpoint": true,
+      "distributedLimiting": true
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "hystrix": false,
+      "polly": true,
+      "fallbackResponses": true
+    },
+    "requestAggregation": {
+      "enabled": true,
+      "graphql": false,
+      "bff": true,
+      "responseComposition": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [],
+    "domainServices": [],
+    "specifications": false,
+    "note": "API Gateway is infrastructure - no domain logic"
+  },
+  
+  "application": {
+    "commands": [],
+    "queries": [],
+    "eventHandlers": [],
+    "middlewares": [
+      {
+        "name": "AuthenticationMiddleware",
+        "order": 1,
+        "enabled": true
+      },
+      {
+        "name": "AuthorizationMiddleware", 
+        "order": 2,
+        "enabled": true
+      },
+      {
+        "name": "RateLimitingMiddleware",
+        "order": 3,
+        "enabled": true
+      },
+      {
+        "name": "RequestLoggingMiddleware",
+        "order": 4,
+        "enabled": true
+      },
+      {
+        "name": "ResponseCompressionMiddleware",
+        "order": 5,
+        "enabled": true
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "gateway": {
+      "provider": "ocelot",
+      "configuration": "ocelot.json",
+      "consul": false,
+      "eureka": false
+    },
+    "database": {
+      "provider": "redis",
+      "eventStore": false,
+      "readModel": "redis",
+      "connectionString": "{{connectionString}}",
+      "usage": "rate-limiting-cache"
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": false,
+      "auditEvents": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "responseCache": true,
+      "ttl": 60
+    },
+    "externalServices": [
+      {
+        "name": "{{downstreamService}}",
+        "type": "http",
+        "baseUrl": "{{downstreamServiceUrl}}",
+        "retryPolicy": true,
+        "circuitBreaker": true,
+        "timeout": 30
+      }
+    ]
+  },
+  
+  "api": {
+    "type": "gateway",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "multiple",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "routes": [
+      {
+        "upstream": "/api/v1/{{service}}/{everything}",
+        "downstream": "/api/v1/{everything}",
+        "host": "{{service}}-service",
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "authentication": true,
+        "rateLimiting": true
+      }
+    ],
+    "cors": {
+      "enabled": true,
+      "origins": ["{{allowedOrigins}}"],
+      "methods": ["GET", "POST", "PUT", "DELETE"],
+      "headers": ["Content-Type", "Authorization"]
+    }
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "loadTests": true,
+    "securityTests": true,
+    "routingTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "ingress": true,
+      "hpa": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "requestResponse": true,
+      "auditTrail": true
+    },
+    "tracing": true,
+    "gatewayMetrics": {
+      "requestCount": true,
+      "responseTime": true,
+      "errorRate": true,
+      "rateLimitHits": true
+    }
+  },
+  
+  "security": {
+    "https": true,
+    "hsts": true,
+    "contentSecurityPolicy": true,
+    "rateLimiting": true,
+    "ddosProtection": true,
+    "ipWhitelist": false,
+    "requestSizeLimit": true
+  }
+} 

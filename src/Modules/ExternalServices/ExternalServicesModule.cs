@@ -36,63 +36,58 @@ public class ExternalServicesModule : ITemplateModule
     private async Task GenerateServiceClientAsync(GenerationContext context, ExternalServiceConfiguration service)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate service client
         var clientContent = GenerateServiceClient(config, service);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/{service.Name}/{service.Name}Client.cs", clientContent);
+        await context.WriteFileAsync($"src/Infrastructure/ExternalServices/{service.Name}/{service.Name}Client.cs", clientContent);
     }
 
     private async Task GenerateServiceInterfaceAsync(GenerationContext context, ExternalServiceConfiguration service)
     {
         var config = context.Configuration;
-        var applicationPath = context.GetApplicationProjectPath();
 
         // Generate service interface
         var interfaceContent = GenerateServiceInterface(config, service);
-        await context.WriteFileAsync($"{applicationPath}/ExternalServices/I{service.Name}Service.cs", interfaceContent);
+        await context.WriteFileAsync($"src/Application/ExternalServices/I{service.Name}Service.cs", interfaceContent);
     }
 
     private async Task GenerateResilienceInfrastructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate resilience policies
         var resiliencePoliciesContent = GenerateResiliencePolicies(config);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/Resilience/ResiliencePolicies.cs", resiliencePoliciesContent);
+        await context.WriteFileAsync("src/Infrastructure/ExternalServices/Resilience/ResiliencePolicies.cs", resiliencePoliciesContent);
 
         // Generate HTTP client factory
         var httpClientFactoryContent = GenerateHttpClientFactory(config);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/Resilience/HttpClientFactory.cs", httpClientFactoryContent);
+        await context.WriteFileAsync("src/Infrastructure/ExternalServices/Resilience/HttpClientFactory.cs", httpClientFactoryContent);
 
         // Generate authentication handlers
         var authHandlersContent = GenerateAuthenticationHandlers(config);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/Authentication/AuthenticationHandlers.cs", authHandlersContent);
+        await context.WriteFileAsync("src/Infrastructure/ExternalServices/Authentication/AuthenticationHandlers.cs", authHandlersContent);
     }
 
     private async Task GenerateServiceRegistryAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate service registry
         var serviceRegistryContent = GenerateServiceRegistry(config);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/Registry/ServiceRegistry.cs", serviceRegistryContent);
+        await context.WriteFileAsync("src/Infrastructure/ExternalServices/Registry/ServiceRegistry.cs", serviceRegistryContent);
 
         // Generate service discovery
         var serviceDiscoveryContent = GenerateServiceDiscovery(config);
-        await context.WriteFileAsync($"{infrastructurePath}/ExternalServices/Registry/ServiceDiscovery.cs", serviceDiscoveryContent);
+        await context.WriteFileAsync("src/Infrastructure/ExternalServices/Registry/ServiceDiscovery.cs", serviceDiscoveryContent);
     }
 
     private async Task GenerateExternalServicesExtensionsAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate external services extensions
         var extensionsContent = GenerateExternalServicesExtensions(config);
-        await context.WriteFileAsync($"{infrastructurePath}/Extensions/ExternalServicesExtensions.cs", extensionsContent);
+        await context.WriteFileAsync("src/Infrastructure/Extensions/ExternalServicesExtensions.cs", extensionsContent);
     }
 
     private string GenerateServiceClient(TemplateConfiguration config, ExternalServiceConfiguration service)

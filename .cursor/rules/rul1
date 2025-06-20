@@ -1,0 +1,55 @@
+---	
+description: 	
+globs: 	
+alwaysApply: true	
+---	
+Pracujemy nad CLI do generowania mikroserwisów według DDD clean architecture CQRS domain events itp	
+
+Dążymy do tego, żeby na bazie szablonów i logiki z CLI móc wygenerować np. pełny projekt według DDD na bazie parametrów np. nazwa projektu. I móc następnie łatwo dodawać agregaty encje na bazie nazwy itp CO np. doda agregat, repository, może cruda, command,query w aplikaci itp, EVENTY TEGO agregatu podstawowe wraz z testami itp CHodzi o core szablon - logikę domenową ma implementować użytkownik ale cała otoczka może zostać wygenerowana przez nas i do tego dążymy. Zrób audyt na czym stoimy, aktualnie mamy wersję 0.2.0.	
+
+
+KROK 1: Analiza obecnego stanu (1 commit)	
+Przetestować CLI bez żadnych zmian	
+Sprawdzić które moduły działają vs. nie działają	
+Zapisać wyniki w pliku CURRENT_STATUS.md	
+COMMIT: docs: Add current status analysis before fixes	
+KROK 2: Napraw 1 moduł na raz (po 1 commit każdy)	
+2.1 ApplicationModule (1 commit)	
+Sprawdzić dlaczego nie generuje plików	
+Naprawić TYLKO ApplicationModule	
+Przetestować czy generuje commands/queries/handlers	
+COMMIT: fix: ApplicationModule now generates CQRS files	
+2.2 InfrastructureModule (1 commit)	
+Naprawić generowanie repositories/DbContext	
+COMMIT: fix: InfrastructureModule generates repositories and DbContext	
+2.3 ApiModule (1 commit)	
+Naprawić generowanie controllers/REST API	
+COMMIT: fix: ApiModule generates REST controllers with CRUD	
+KROK 3: Testowanie end-to-end (1 commit)	
+Utworzyć test case: Article aggregate	
+Sprawdzić czy generuje pełen stack:	
+Domain: Article entity + events	
+Application: ArticleCommands/Queries + handlers	
+Infrastructure: ArticleRepository + DbContext	
+API: ArticleController z CRUD	
+COMMIT: test: Add end-to-end test for Article aggregate	
+KROK 4: CLI improvements (po 1 commit każdy)	
+4.1 Interactive mode (1 commit)	
+Naprawić interaktywny tryb CLI	
+COMMIT: feat: Fix interactive CLI mode	
+4.2 Template examples (1 commit)	
+Dodać working examples w templates/	
+COMMIT: feat: Add working template examples	
+KROK 5: Cleanup tylko jeśli wszystko działa (po 1 commit)	
+5.1 Remove hardcoded examples (1 commit)	
+Usunąć TYLKO hardcoded examples	
+COMMIT: refactor: Remove hardcoded examples	
+5.2 Parametrize templates (1 commit)	
+Przenieść szablony do właściwych miejsc	
+COMMIT: refactor: Move templates to proper locations	
+✅ REGUŁY:	
+1 FUNKCJONALNOŚĆ = 1 COMMIT
+TESTUJ PRZED KAŻDYM COMMITEM	
+Jeśli coś nie działa - zatrzymaj się i napraw	
+Nie mieszaj różnych typów zmian	
+Footer

@@ -1,0 +1,154 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "CQRS + Event Sourcing microservice with complex business logic and audit trail",
+  
+  "architecture": {
+    "pattern": "cqrs-event-sourcing",
+    "complexity": "enterprise",
+    "layers": ["Domain", "Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "cqrs": {
+      "enabled": true,
+      "commandHandlers": true,
+      "queryHandlers": true,
+      "separateReadWrite": true
+    },
+    "eventSourcing": {
+      "enabled": true,
+      "eventStore": "postgresql",
+      "snapshotting": true,
+      "eventReplay": true
+    },
+    "domainEvents": {
+      "enabled": true,
+      "eventDispatcher": true,
+      "eventHandlers": true
+    },
+    "aggregateRoot": {
+      "enabled": true,
+      "domainEventsSupport": true,
+      "businessRuleValidation": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "{{aggregateName}}",
+        "entities": ["{{aggregateName}}"],
+        "valueObjects": ["{{aggregateName}}Id", "{{aggregateName}}Status"],
+        "domainEvents": [
+          "{{aggregateName}}Created",
+          "{{aggregateName}}Updated", 
+          "{{aggregateName}}StatusChanged"
+        ]
+      }
+    ],
+    "domainServices": [],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "Create{{aggregateName}}",
+        "handler": "Create{{aggregateName}}Handler",
+        "validation": true
+      },
+      {
+        "name": "Update{{aggregateName}}",
+        "handler": "Update{{aggregateName}}Handler", 
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "Get{{aggregateName}}ById",
+        "handler": "Get{{aggregateName}}ByIdHandler",
+        "returnType": "{{aggregateName}}Dto"
+      },
+      {
+        "name": "Get{{aggregateName}}List",
+        "handler": "Get{{aggregateName}}ListHandler",
+        "returnType": "List<{{aggregateName}}Dto>",
+        "pagination": true
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "{{aggregateName}}Created",
+        "handler": "{{aggregateName}}CreatedHandler"
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": true,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}"
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "{{aggregateName}}Controller",
+        "actions": ["Create", "Update", "GetById", "GetList"]
+      }
+    ]
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "architectureTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true
+    },
+    "tracing": true
+  }
+} 

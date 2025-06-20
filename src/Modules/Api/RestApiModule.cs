@@ -49,21 +49,21 @@ public class RestApiModule : ITemplateModule
 
         // Generate .csproj file
         var csprojContent = GenerateProjectFile(config);
-        await context.WriteFileAsync($"{outputPath}/{config.MicroserviceName}.Api.csproj", csprojContent);
+        await context.WriteFileAsync($"src/Api/{config.MicroserviceName}.Api.csproj", csprojContent);
 
         // Generate Program.cs
         var programContent = GenerateProgramFile(config);
-        await context.WriteFileAsync($"{outputPath}/Program.cs", programContent);
+        await context.WriteFileAsync($"src/Api/Program.cs", programContent);
 
         // Generate appsettings.json
         var appSettingsContent = GenerateAppSettingsFile(config);
-        await context.WriteFileAsync($"{outputPath}/appsettings.json", appSettingsContent);
+        await context.WriteFileAsync($"src/Api/appsettings.json", appSettingsContent);
     }
 
     private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var controllerContent = GenerateController(config, aggregate);
-        await context.WriteFileAsync($"{outputPath}/Controllers/{aggregate.Name}Controller.cs", controllerContent);
+        await context.WriteFileAsync($"src/Api/Controllers/{aggregate.Name}Controller.cs", controllerContent);
 
         // Generate request/response models
         await GenerateApiModelsAsync(outputPath, config, aggregate, context);
@@ -75,25 +75,25 @@ public class RestApiModule : ITemplateModule
 
         // Generate request models
         var createRequestContent = GenerateCreateRequest(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"Create{aggregate.Name}Request.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/Create{aggregate.Name}Request.cs", 
             createRequestContent);
 
         var updateRequestContent = GenerateUpdateRequest(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"Update{aggregate.Name}Request.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/Update{aggregate.Name}Request.cs", 
             updateRequestContent);
 
         // Generate response models
         var responseContent = GenerateResponse(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"{aggregate.Name}Response.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/{aggregate.Name}Response.cs", 
             responseContent);
 
         // Generate paged response
         var pagedResponseContent = GeneratePagedResponse(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, "PagedResponse.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/PagedResponse.cs", 
             pagedResponseContent);
     }
 
@@ -101,26 +101,26 @@ public class RestApiModule : ITemplateModule
     {
         // Generate global exception filter
         var exceptionFilterContent = GenerateGlobalExceptionFilter(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Filters", "GlobalExceptionFilter.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Filters/GlobalExceptionFilter.cs", 
             exceptionFilterContent);
 
         // Generate validation filter
         var validationFilterContent = GenerateValidationFilter(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Filters", "ValidationFilter.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Filters/ValidationFilter.cs", 
             validationFilterContent);
 
         // Generate API extensions
         var apiExtensionsContent = GenerateApiExtensions(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Extensions", "ApiExtensions.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Extensions/ApiExtensions.cs", 
             apiExtensionsContent);
 
         // Generate correlation middleware
         var correlationMiddlewareContent = GenerateCorrelationMiddleware(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Middleware", "CorrelationMiddleware.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Middleware/CorrelationMiddleware.cs", 
             correlationMiddlewareContent);
     }
 
@@ -133,17 +133,17 @@ public class RestApiModule : ITemplateModule
         
         if (decisions.EnableDDD)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Domain\{config.MicroserviceName}.Domain.csproj"" />");
         }
         
         if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Application\{config.MicroserviceName}.Application.csproj"" />");
         }
         
         if (decisions.EnableInfrastructure)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Infrastructure\{config.MicroserviceName}.Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />");
         }
 
         var projectReferencesSection = projectReferences.Any() 
@@ -166,15 +166,17 @@ public class RestApiModule : ITemplateModule
   <ItemGroup>
     <PackageReference Include=""Microsoft.AspNetCore.OpenApi"" Version=""8.0.0"" />
     <PackageReference Include=""Swashbuckle.AspNetCore"" Version=""6.6.2"" />
-    <PackageReference Include=""WolverineFx"" Version=""3.5.0"" />
+
     <PackageReference Include=""FluentValidation.AspNetCore"" Version=""11.3.0"" />
     <PackageReference Include=""Serilog.AspNetCore"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.ResponseCompression"" Version=""2.2.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning"" Version=""5.1.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer"" Version=""5.1.0"" />
-    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks"" Version=""8.0.0"" />
+    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks"" Version=""8.0.10"" />
     <PackageReference Include=""AspNetCore.HealthChecks.UI.Client"" Version=""8.0.1"" />
+    <PackageReference Include=""MassTransit"" Version=""8.2.0"" />
+    <PackageReference Include=""MassTransit.RabbitMQ"" Version=""8.2.0"" />
   </ItemGroup>{projectReferencesSection}
 
 </Project>";
@@ -193,7 +195,7 @@ public class RestApiModule : ITemplateModule
             $"using {config.Namespace}.Api.Extensions;",
             $"using {config.Namespace}.Api.Filters;",
             $"using {config.Namespace}.Api.Middleware;",
-            "using Wolverine;",
+            "using MassTransit;",
             "using Serilog;"
         };
 
@@ -251,8 +253,19 @@ builder.Services.AddApiExtensions(builder.Configuration);
 
 {authConfig}
 
-// Add Wolverine
-builder.Host.UseWolverine();
+// Add MassTransit
+builder.Services.AddMassTransit(x =>
+{{
+    x.UsingRabbitMq((context, cfg) =>
+    {{
+        cfg.Host(""localhost"", ""/vhost"", h =>
+        {{
+            h.Username(""guest"");
+            h.Password(""guest"");
+        }});
+        cfg.ConfigureEndpoints(context);
+    }});
+}});
 
 var app = builder.Build();
 
@@ -313,34 +326,210 @@ public partial class Program {{ }}";
 
     private string GenerateController(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var controllerName = $"{aggregate.Name}Controller";
-        var aggregateLower = aggregate.Name.ToLowerInvariant();
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        
+        // For minimal architecture, generate simple controller without CQRS
+        if (decisions.ArchitectureLevel == ArchitectureLevel.Minimal)
+        {
+            return GenerateMinimalController(config, aggregate);
+        }
+        
+        // For standard/enterprise architecture, generate CQRS controller
+        return GenerateCQRSController(config, aggregate);
+    }
 
-        return $@"using Microsoft.AspNetCore.Mvc;
-using {config.Namespace}.Application.{aggregate.Name}.Commands.Create{aggregate.Name};
-using {config.Namespace}.Application.{aggregate.Name}.Commands.Update{aggregate.Name};
-using {config.Namespace}.Application.{aggregate.Name}.Commands.Delete{aggregate.Name};
-using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}ById;
-using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}s;
-using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}sWithPaging;
-using {config.Namespace}.Application.{aggregate.Name}.DTOs;
-using {config.Namespace}.Api.Models;
-using Wolverine;
+    private string GenerateMinimalController(TemplateConfiguration config, AggregateConfiguration aggregate)
+    {
+        // Generate using statements for minimal controller
+        var usingStatements = new List<string>
+        {
+            "using Microsoft.AspNetCore.Mvc;",
+            $"using {config.Namespace}.Domain.Entities;",
+            $"using {config.Namespace}.Api.Models;"
+        };
+
+        var usings = string.Join("\n", usingStatements);
+
+        return $@"{usings}
 
 namespace {config.Namespace}.Api.Controllers;
 
 [ApiController]
-[Route(""api/rest/{aggregateLower}"")]
+[Route(""api/rest/{aggregate.Name.ToLowerInvariant()}"")]
 [Produces(""application/json"")]
 [Tags(""{aggregate.Name} Management"")]
-public class {controllerName} : ControllerBase
+public class {aggregate.Name}Controller : ControllerBase
 {{
-    private readonly IMessageBus _messageBus;
-    private readonly ILogger<{controllerName}> _logger;
+    private readonly ILogger<{aggregate.Name}Controller> _logger;
+    private static readonly List<{aggregate.Name}> _data = new(); // In-memory storage for minimal service
 
-    public {controllerName}(IMessageBus messageBus, ILogger<{controllerName}> logger)
+    public {aggregate.Name}Controller(ILogger<{aggregate.Name}Controller> logger)
     {{
-        _messageBus = messageBus;
+        _logger = logger;
+    }}
+
+    /// <summary>
+    /// Get all {aggregate.Name.ToLowerInvariant()}s
+    /// </summary>
+    /// <returns>List of {aggregate.Name.ToLowerInvariant()}s</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<{aggregate.Name}Response>), StatusCodes.Status200OK)]
+    public ActionResult<IEnumerable<{aggregate.Name}Response>> Get{aggregate.Name}s()
+    {{
+        _logger.LogInformation(""Getting all {aggregate.Name.ToLowerInvariant()}s"");
+        
+        var response = _data.Select(MapToResponse).ToList();
+        return Ok(response);
+    }}
+
+    /// <summary>
+    /// Get {aggregate.Name.ToLowerInvariant()} by ID
+    /// </summary>
+    /// <param name=""id"">{aggregate.Name} ID</param>
+    /// <returns>{aggregate.Name} details</returns>
+    [HttpGet(""{{id:guid}}"")]
+    [ProducesResponseType(typeof({aggregate.Name}Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<{aggregate.Name}Response> Get{aggregate.Name}ById(Guid id)
+    {{
+        _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
+        
+        var entity = _data.FirstOrDefault(x => x.Id == id);
+        if (entity == null)
+        {{
+            _logger.LogWarning(""{aggregate.Name} with id={{Id}} not found"", id);
+            return NotFound();
+        }}
+        
+        return Ok(MapToResponse(entity));
+    }}
+
+    /// <summary>
+    /// Create new {aggregate.Name.ToLowerInvariant()}
+    /// </summary>
+    /// <param name=""request"">Create {aggregate.Name.ToLowerInvariant()} request</param>
+    /// <returns>Created {aggregate.Name.ToLowerInvariant()} ID</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<Guid> Create{aggregate.Name}([FromBody] Create{aggregate.Name}Request request)
+    {{
+        _logger.LogInformation(""Creating new {aggregate.Name.ToLowerInvariant()}"");
+        
+        var entity = new {aggregate.Name}(
+            Guid.NewGuid(),
+            request.Name,
+            request.Description);
+        
+        _data.Add(entity);
+        
+        _logger.LogInformation(""{aggregate.Name} created with id={{Id}}"", entity.Id);
+        return CreatedAtAction(nameof(Get{aggregate.Name}ById), new {{ id = entity.Id }}, entity.Id);
+    }}
+
+    /// <summary>
+    /// Update existing {aggregate.Name.ToLowerInvariant()}
+    /// </summary>
+    /// <param name=""id"">{aggregate.Name} ID</param>
+    /// <param name=""request"">Update {aggregate.Name.ToLowerInvariant()} request</param>
+    /// <returns>No content</returns>
+    [HttpPut(""{{id:guid}}"")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult Update{aggregate.Name}(Guid id, [FromBody] Update{aggregate.Name}Request request)
+    {{
+        _logger.LogInformation(""Updating {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
+        
+        var entity = _data.FirstOrDefault(x => x.Id == id);
+        if (entity == null)
+        {{
+            _logger.LogWarning(""{aggregate.Name} with id={{Id}} not found"", id);
+            return NotFound();
+        }}
+
+        // Update entity properties (simplified for minimal service)
+        // In real implementation, you would call entity.Update() methods
+        
+        _logger.LogInformation(""{aggregate.Name} with id={{Id}} updated successfully"", id);
+        return NoContent();
+    }}
+
+    /// <summary>
+    /// Delete {aggregate.Name.ToLowerInvariant()}
+    /// </summary>
+    /// <param name=""id"">{aggregate.Name} ID</param>
+    /// <returns>No content</returns>
+    [HttpDelete(""{{id:guid}}"")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult Delete{aggregate.Name}(Guid id)
+    {{
+        _logger.LogInformation(""Deleting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
+        
+        var entity = _data.FirstOrDefault(x => x.Id == id);
+        if (entity == null)
+        {{
+            _logger.LogWarning(""{aggregate.Name} with id={{Id}} not found"", id);
+            return NotFound();
+        }}
+
+        _data.Remove(entity);
+        
+        _logger.LogInformation(""{aggregate.Name} with id={{Id}} deleted successfully"", id);
+        return NoContent();
+    }}
+
+    // Mapping methods
+    private static {aggregate.Name}Response MapToResponse({aggregate.Name} entity)
+    {{
+        return new {aggregate.Name}Response
+        {{
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        }};
+    }}
+}}";
+    }
+
+    private string GenerateCQRSController(TemplateConfiguration config, AggregateConfiguration aggregate)
+    {
+        // Generate using statements for CQRS controller
+        var usingStatements = new List<string>
+        {
+            "using Microsoft.AspNetCore.Mvc;",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Commands.Create{aggregate.Name};",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Commands.Update{aggregate.Name};",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Commands.Delete{aggregate.Name};",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}ById;",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}s;",
+            $"using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}sWithPaging;",
+            $"using {config.Namespace}.Application.{aggregate.Name}.DTOs;",
+            $"using {config.Namespace}.Api.Models;",
+            "using MassTransit;"
+        };
+
+        var usings = string.Join("\n", usingStatements);
+
+        return $@"{usings}
+
+namespace {config.Namespace}.Api.Controllers;
+
+[ApiController]
+[Route(""api/rest/{aggregate.Name.ToLowerInvariant()}"")]
+[Produces(""application/json"")]
+[Tags(""{aggregate.Name} Management"")]
+public class {aggregate.Name}Controller : ControllerBase
+{{
+    private readonly IBus _bus;
+    private readonly ILogger<{aggregate.Name}Controller> _logger;
+
+    public {aggregate.Name}Controller(IBus bus, ILogger<{aggregate.Name}Controller> logger)
+    {{
+        _bus = bus;
         _logger = logger;
     }}
 
@@ -357,12 +546,14 @@ public class {controllerName} : ControllerBase
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {{
-        _logger.LogInformation(""Getting {aggregateLower}s with page={{Page}}, pageSize={{PageSize}}"", page, pageSize);
+        _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()}s with page={{Page}}, pageSize={{PageSize}}"", page, pageSize);
         
         var query = new Get{aggregate.Name}sWithPagingQuery(page, pageSize);
-        var result = await _messageBus.InvokeAsync<PagedResult<{aggregate.Name}Dto>>(query, cancellationToken);
+        var client = _bus.CreateRequestClient<Get{aggregate.Name}sWithPagingQuery>();
+        var response = await client.GetResponse<PagedResult<{aggregate.Name}Dto>>(query, cancellationToken);
+        var result = response.Message;
         
-        var response = new PagedResponse<{aggregate.Name}Response>
+        var pagedResponse = new PagedResponse<{aggregate.Name}Response>
         {{
             Items = result.Items.Select(MapToResponse).ToList(),
             TotalCount = result.TotalCount,
@@ -371,7 +562,7 @@ public class {controllerName} : ControllerBase
             TotalPages = result.TotalPages
         }};
         
-        return Ok(response);
+        return Ok(pagedResponse);
     }}
 
     /// <summary>
@@ -386,10 +577,12 @@ public class {controllerName} : ControllerBase
         Guid id, 
         CancellationToken cancellationToken = default)
     {{
-        _logger.LogInformation(""Getting {aggregateLower} with id={{Id}}"", id);
+        _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var query = new Get{aggregate.Name}ByIdQuery(id);
-        var result = await _messageBus.InvokeAsync<{aggregate.Name}Dto?>(query, cancellationToken);
+        var client = _bus.CreateRequestClient<Get{aggregate.Name}ByIdQuery>();
+        var response = await client.GetResponse<{aggregate.Name}Dto?>(query, cancellationToken);
+        var result = response.Message;
         
         if (result == null)
         {{
@@ -412,10 +605,12 @@ public class {controllerName} : ControllerBase
         [FromBody] Create{aggregate.Name}Request request,
         CancellationToken cancellationToken = default)
     {{
-        _logger.LogInformation(""Creating new {aggregateLower}"");
+        _logger.LogInformation(""Creating new {aggregate.Name.ToLowerInvariant()}"");
         
         var command = MapToCreateCommand(request);
-        var id = await _messageBus.InvokeAsync<Guid>(command, cancellationToken);
+        var client = _bus.CreateRequestClient<Create{aggregate.Name}Command>();
+        var response = await client.GetResponse<Guid>(command, cancellationToken);
+        var id = response.Message;
         
         _logger.LogInformation(""{aggregate.Name} created with id={{Id}}"", id);
         return CreatedAtAction(nameof(Get{aggregate.Name}ById), new {{ id }}, id);
@@ -436,10 +631,11 @@ public class {controllerName} : ControllerBase
         [FromBody] Update{aggregate.Name}Request request,
         CancellationToken cancellationToken = default)
     {{
-        _logger.LogInformation(""Updating {aggregateLower} with id={{Id}}"", id);
+        _logger.LogInformation(""Updating {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var command = MapToUpdateCommand(id, request);
-        await _messageBus.InvokeAsync(command, cancellationToken);
+        var client = _bus.CreateRequestClient<Update{aggregate.Name}Command>();
+        await client.GetResponse<MediatR.Unit>(command, cancellationToken);
         
         _logger.LogInformation(""{aggregate.Name} with id={{Id}} updated successfully"", id);
         return NoContent();
@@ -457,10 +653,11 @@ public class {controllerName} : ControllerBase
         Guid id,
         CancellationToken cancellationToken = default)
     {{
-        _logger.LogInformation(""Deleting {aggregateLower} with id={{Id}}"", id);
+        _logger.LogInformation(""Deleting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var command = new Delete{aggregate.Name}Command(id);
-        await _messageBus.InvokeAsync(command, cancellationToken);
+        var client = _bus.CreateRequestClient<Delete{aggregate.Name}Command>();
+        await client.GetResponse<MediatR.Unit>(command, cancellationToken);
         
         _logger.LogInformation(""{aggregate.Name} with id={{Id}} deleted successfully"", id);
         return NoContent();
@@ -472,29 +669,39 @@ public class {controllerName} : ControllerBase
         return new {aggregate.Name}Response
         {{
             Id = dto.Id,
-{string.Join(",\n", aggregate.Properties.Select(p => $"            {p.Name} = dto.{p.Name}"))}
+            Name = dto.Name,
+            Description = dto.Description
         }};
     }}
 
     private static Create{aggregate.Name}Command MapToCreateCommand(Create{aggregate.Name}Request request)
     {{
         return new Create{aggregate.Name}Command(
-{string.Join(",\n", aggregate.Properties.Select(p => $"            request.{p.Name}"))});
+            request.Name,
+            request.Description);
     }}
 
     private static Update{aggregate.Name}Command MapToUpdateCommand(Guid id, Update{aggregate.Name}Request request)
     {{
         return new Update{aggregate.Name}Command(
             id,
-{string.Join(",\n", aggregate.Properties.Select(p => $"            request.{p.Name}"))});
+            request.Name,
+            request.Description);
     }}
 }}";
     }
 
     private string GenerateCreateRequest(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => 
-            $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out Id, CreatedAt, UpdatedAt from create request as they are auto-generated
+        var filteredProperties = aggregate.Properties
+            .Where(p => p.Name != "Id" && p.Name != "CreatedAt" && p.Name != "UpdatedAt")
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}")
+            .ToList();
+
+        var properties = filteredProperties.Any() 
+            ? string.Join("\n    ", filteredProperties)
+            : "// No additional properties";
 
         return $@"using System.ComponentModel.DataAnnotations;
 
@@ -505,14 +712,21 @@ namespace {config.Namespace}.Api.Models;
 /// </summary>
 public class Create{aggregate.Name}Request
 {{
-{properties}
+    {properties}
 }}";
     }
 
     private string GenerateUpdateRequest(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => 
-            $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out Id, CreatedAt, UpdatedAt from update request
+        var filteredProperties = aggregate.Properties
+            .Where(p => p.Name != "Id" && p.Name != "CreatedAt" && p.Name != "UpdatedAt")
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}")
+            .ToList();
+
+        var properties = filteredProperties.Any() 
+            ? string.Join("\n    ", filteredProperties)
+            : "// No additional properties";
 
         return $@"using System.ComponentModel.DataAnnotations;
 
@@ -523,14 +737,21 @@ namespace {config.Namespace}.Api.Models;
 /// </summary>
 public class Update{aggregate.Name}Request
 {{
-{properties}
+    {properties}
 }}";
     }
 
     private string GenerateResponse(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        var properties = string.Join("\n    ", aggregate.Properties.Select(p => 
-            $"public {p.Type} {p.Name} {{ get; set; }}"));
+        // Filter out Id, CreatedAt, UpdatedAt from aggregate properties as they are added separately
+        var filteredProperties = aggregate.Properties
+            .Where(p => p.Name != "Id" && p.Name != "CreatedAt" && p.Name != "UpdatedAt")
+            .Select(p => $"public {p.Type} {p.Name} {{ get; set; }}")
+            .ToList();
+
+        var properties = filteredProperties.Any() 
+            ? "\n    " + string.Join("\n    ", filteredProperties)
+            : "";
 
         return $@"namespace {config.Namespace}.Api.Models;
 
@@ -539,8 +760,7 @@ public class Update{aggregate.Name}Request
 /// </summary>
 public class {aggregate.Name}Response
 {{
-    public Guid Id {{ get; set; }}
-{properties}
+    public Guid Id {{ get; set; }}{properties}
     public DateTime CreatedAt {{ get; set; }}
     public DateTime? UpdatedAt {{ get; set; }}
 }}";
@@ -693,6 +913,32 @@ public class ValidationFilter : IActionFilter
 
     private string GenerateApiExtensions(TemplateConfiguration config)
     {
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        
+        // Generate health checks section based on enabled modules
+        var healthChecks = decisions.EnableInfrastructure 
+            ? $@"        // Add Health Checks
+        services.AddHealthChecks()
+            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+            .AddDbContextCheck<{config.Namespace}.Infrastructure.Persistence.ApplicationDbContext>();"
+            : $@"        // Add Health Checks
+        services.AddHealthChecks()
+            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());";
+
+        // Generate API versioning section based on architecture level
+        var apiVersioning = decisions.ArchitectureLevel != ArchitectureLevel.Minimal
+            ? $@"        // Add API Versioning
+        services.AddApiVersioning(options =>
+        {{
+            options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
+                new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
+                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version"")
+            );
+        }});"
+            : "        // API Versioning not included for minimal architecture";
+
         return $@"using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -753,10 +999,7 @@ public static class ApiExtensions
         // Add Memory Cache
         services.AddMemoryCache();
 
-        // Add Health Checks
-        services.AddHealthChecks()
-            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
-            .AddDbContextCheck<{config.Namespace}.Infrastructure.Persistence.ApplicationDbContext>();
+{healthChecks}
 
         // Configure Swagger
         services.AddSwaggerGen(c =>
@@ -807,21 +1050,7 @@ public static class ApiExtensions
             }}
         }});
 
-        // Add API Versioning
-        services.AddApiVersioning(options =>
-        {{
-            options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
-                new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
-                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version""),
-                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
-            );
-        }}).AddVersionedApiExplorer(setup =>
-        {{
-            setup.GroupNameFormat = ""'v'VVV"";
-            setup.SubstituteApiVersionInUrl = true;
-        }});
+{apiVersioning}
 
         return services;
     }}

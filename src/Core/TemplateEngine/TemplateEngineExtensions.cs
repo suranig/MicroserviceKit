@@ -11,25 +11,10 @@ namespace Microservice.Core.TemplateEngine
         {
             services.AddSingleton<ITemplateEngine, TemplateEngine>();
             
-            // Register modules using type strings to avoid circular references
-            RegisterModule(services, "Microservice.Modules.DDD.DDDModule");
-            RegisterModule(services, "Microservice.Modules.Application.ApplicationModule");
-            RegisterModule(services, "Microservice.Modules.Infrastructure.InfrastructureModule");
-            RegisterModule(services, "Microservice.Modules.Api.ApiModule");
-            RegisterModule(services, "Microservice.Modules.Tests.TestsModule");
-            RegisterModule(services, "Microservice.Modules.Docker.DockerModule");
-            RegisterModule(services, "Microservice.Modules.Messaging.MessagingModule");
+            // Register modules directly by type - they will be loaded at runtime when available
+            // We can't use Type.GetType() with string names because assemblies may not be loaded yet
 
             return services;
-        }
-
-        private static void RegisterModule(IServiceCollection services, string typeName)
-        {
-            var moduleType = Type.GetType(typeName);
-            if (moduleType != null)
-            {
-                services.AddSingleton(typeof(ITemplateModule), moduleType);
-            }
         }
     }
 } 

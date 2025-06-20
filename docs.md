@@ -2,12 +2,11 @@
 
 ## Table of Contents
 1. [Getting Started](#getting-started)
-2. [Configuration Guide](#configuration-guide)
-3. [Usage Examples](#usage-examples)
-4. [Architecture Levels](#architecture-levels)
-5. [Features](#features)
-6. [Migration Guide](#migration-guide)
-7. [FAQ](#faq)
+2. [CLI Commands](#cli-commands)
+3. [Templates](#templates)
+4. [Configuration](#configuration)
+5. [Examples](#examples)
+6. [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -188,41 +187,6 @@ microkit new PaymentService --config templates/examples/banking-payment.json
 - Kubernetes
 - Health Checks
 - Monitoring
-
-## Migration Guide
-
-### Analyzing Current Project
-```bash
-# Analyze current project structure
-microkit migrate --analyze
-
-# Show migration history
-microkit history
-```
-
-### Migration Process
-```bash
-# Preview migration to standard level
-microkit migrate --level standard --dry-run
-
-# Execute migration
-microkit migrate --level standard
-
-# Force migration (if needed)
-microkit migrate --level standard --force
-```
-
-### Migration History
-```bash
-# View migration history
-microkit history
-
-# View detailed history
-microkit history --format json
-
-# View with snapshots
-microkit history --snapshots
-```
 
 ## FAQ
 

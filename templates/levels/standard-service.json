@@ -24,6 +24,12 @@
         "operations": ["Create", "AddItem", "RemoveItem", "Confirm", "Cancel"]
       }
     ],
+    "enums": [
+      {
+        "name": "OrderStatus",
+        "values": ["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"]
+      }
+    ],
     "valueObjects": [
       {
         "name": "Money",

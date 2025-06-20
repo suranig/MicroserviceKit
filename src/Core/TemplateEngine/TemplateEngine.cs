@@ -24,15 +24,9 @@ namespace Microservice.Core.TemplateEngine
         {
             _logger.LogInformation("Starting template generation for {MicroserviceName}", configuration.MicroserviceName);
 
-            // Generate modules
-            foreach (var module in _modules)
-            {
-                if (module.IsEnabled(configuration))
-                {
-                    _logger.LogInformation("Generating {ModuleName} module", module.Name);
-                    await module.GenerateAsync(context);
-                }
-            }
+            // Create MicroserviceGenerator to handle solution file and orchestration
+            var microserviceGenerator = new MicroserviceGenerator(context, configuration, _logger, _modules);
+            await microserviceGenerator.GenerateAsync();
 
             _logger.LogInformation("Template generation completed successfully");
         }

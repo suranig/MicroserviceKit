@@ -1,0 +1,213 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Business Process Control service with workflow engine and Saga pattern",
+  
+  "architecture": {
+    "pattern": "bpc-workflow",
+    "complexity": "enterprise",
+    "layers": ["Domain", "Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "workflowEngine": {
+      "enabled": true,
+      "stateMachine": true,
+      "processOrchestration": true,
+      "longRunningProcesses": true
+    },
+    "sagaPattern": {
+      "enabled": true,
+      "compensationActions": true,
+      "distributedTransactions": true,
+      "choreography": false,
+      "orchestration": true
+    },
+    "externalIntegrations": {
+      "enabled": true,
+      "httpClients": true,
+      "retryPolicies": true,
+      "circuitBreaker": true,
+      "polly": true
+    },
+    "backgroundJobs": {
+      "enabled": true,
+      "provider": "hangfire",
+      "scheduling": true,
+      "recurringJobs": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "Workflow",
+        "entities": ["Workflow", "WorkflowStep", "WorkflowInstance"],
+        "valueObjects": ["WorkflowId", "WorkflowStatus", "StepResult"],
+        "domainEvents": [
+          "WorkflowStarted",
+          "WorkflowStepCompleted",
+          "WorkflowCompleted",
+          "WorkflowFailed",
+          "CompensationTriggered"
+        ]
+      },
+      {
+        "name": "Process",
+        "entities": ["Process", "ProcessStep", "ProcessContext"],
+        "valueObjects": ["ProcessId", "ProcessStatus", "ProcessData"],
+        "domainEvents": [
+          "ProcessStarted",
+          "ProcessStepExecuted",
+          "ProcessCompleted",
+          "ProcessRolledBack"
+        ]
+      }
+    ],
+    "domainServices": [
+      "WorkflowOrchestrator",
+      "ProcessCompensator",
+      "ExternalServiceCoordinator"
+    ],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "StartWorkflow",
+        "handler": "StartWorkflowHandler",
+        "validation": true
+      },
+      {
+        "name": "ExecuteWorkflowStep",
+        "handler": "ExecuteWorkflowStepHandler",
+        "validation": true
+      },
+      {
+        "name": "CompensateWorkflow",
+        "handler": "CompensateWorkflowHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "GetWorkflowStatus",
+        "handler": "GetWorkflowStatusHandler",
+        "returnType": "WorkflowStatusDto"
+      },
+      {
+        "name": "GetProcessHistory",
+        "handler": "GetProcessHistoryHandler",
+        "returnType": "List<ProcessStepDto>"
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "WorkflowStarted",
+        "handler": "WorkflowStartedHandler"
+      },
+      {
+        "event": "WorkflowStepCompleted",
+        "handler": "WorkflowStepCompletedHandler"
+      }
+    ],
+    "sagaHandlers": [
+      {
+        "saga": "{{processName}}Saga",
+        "events": ["{{processName}}Started", "{{processName}}StepCompleted"],
+        "compensations": true
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": false,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}"
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": true,
+      "sagaSupport": true
+    },
+    "backgroundJobs": {
+      "provider": "hangfire",
+      "dashboard": true,
+      "recurring": true,
+      "delayed": true
+    },
+    "externalServices": [
+      {
+        "name": "{{externalServiceName}}",
+        "type": "http",
+        "baseUrl": "{{externalServiceUrl}}",
+        "retryPolicy": true,
+        "circuitBreaker": true
+      }
+    ],
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true
+    }
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "WorkflowController",
+        "actions": ["Start", "GetStatus", "Cancel", "Retry"]
+      },
+      {
+        "name": "ProcessController",
+        "actions": ["Execute", "GetHistory", "Compensate"]
+      }
+    ]
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "architectureTests": true,
+    "workflowTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "jobs": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "workflowTracking": true
+    },
+    "tracing": true,
+    "hangfireDashboard": true
+  }
+} 

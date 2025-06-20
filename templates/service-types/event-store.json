@@ -1,0 +1,240 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Dedicated event storage service with replay and projection capabilities",
+  
+  "architecture": {
+    "pattern": "event-store",
+    "complexity": "enterprise",
+    "layers": ["Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "eventStore": {
+      "enabled": true,
+      "eventAppending": true,
+      "eventStreams": true,
+      "eventVersioning": true,
+      "concurrencyControl": true
+    },
+    "eventSourcing": {
+      "enabled": true,
+      "aggregateRehydration": true,
+      "snapshotting": true,
+      "eventReplay": true
+    },
+    "projections": {
+      "enabled": true,
+      "realTimeProjections": true,
+      "batchProjections": true,
+      "projectionManagement": true
+    },
+    "eventReplay": {
+      "enabled": true,
+      "timeTravel": true,
+      "pointInTimeRecovery": true,
+      "replayFromPosition": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "EventStream",
+        "entities": ["EventStream", "EventEntry", "StreamSnapshot"],
+        "valueObjects": ["StreamId", "EventId", "EventVersion", "EventPosition"],
+        "domainEvents": [
+          "EventAppended",
+          "SnapshotCreated",
+          "StreamCreated"
+        ]
+      }
+    ],
+    "domainServices": [
+      "EventSerializer",
+      "StreamManager",
+      "SnapshotManager"
+    ],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "AppendEvent",
+        "handler": "AppendEventHandler",
+        "validation": true
+      },
+      {
+        "name": "CreateSnapshot",
+        "handler": "CreateSnapshotHandler",
+        "validation": true
+      },
+      {
+        "name": "StartProjection",
+        "handler": "StartProjectionHandler",
+        "validation": true
+      },
+      {
+        "name": "ReplayEvents",
+        "handler": "ReplayEventsHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "GetEventStream",
+        "handler": "GetEventStreamHandler",
+        "returnType": "List<EventDto>",
+        "pagination": true
+      },
+      {
+        "name": "GetEventsFromPosition",
+        "handler": "GetEventsFromPositionHandler",
+        "returnType": "List<EventDto>"
+      },
+      {
+        "name": "GetSnapshot",
+        "handler": "GetSnapshotHandler",
+        "returnType": "SnapshotDto"
+      },
+      {
+        "name": "GetProjectionStatus",
+        "handler": "GetProjectionStatusHandler",
+        "returnType": "ProjectionStatusDto"
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "EventAppended",
+        "handler": "EventAppendedHandler"
+      },
+      {
+        "event": "SnapshotCreated",
+        "handler": "SnapshotCreatedHandler"
+      }
+    ],
+    "projectionHandlers": [
+      {
+        "name": "{{projectionName}}ProjectionHandler",
+        "events": ["{{eventType}}"],
+        "projectionType": "real-time"
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": true,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}",
+      "tables": ["Events", "Snapshots", "Projections", "StreamMetadata"]
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": true,
+      "projectionUpdates": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "snapshotCache": true,
+      "projectionCache": true,
+      "ttl": 3600
+    },
+    "storage": {
+      "eventSerialization": "json",
+      "compression": true,
+      "encryption": false,
+      "partitioning": true
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "jwt",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "EventStoreController",
+        "actions": ["AppendEvent", "GetEvents", "GetStream"],
+        "authentication": "service-to-service"
+      },
+      {
+        "name": "ProjectionController",
+        "actions": ["StartProjection", "StopProjection", "GetStatus"],
+        "authorization": "admin-only"
+      },
+      {
+        "name": "SnapshotController",
+        "actions": ["CreateSnapshot", "GetSnapshot"],
+        "authentication": "service-to-service"
+      },
+      {
+        "name": "ReplayController",
+        "actions": ["ReplayEvents", "GetReplayStatus"],
+        "authorization": "admin-only"
+      }
+    ]
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "eventStoreTests": true,
+    "projectionTests": true,
+    "performanceTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "persistentVolume": true,
+      "statefulSet": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "eventOperations": true,
+      "projectionProgress": true
+    },
+    "tracing": true,
+    "eventStoreMetrics": {
+      "eventsAppended": true,
+      "streamCount": true,
+      "projectionLag": true,
+      "snapshotFrequency": true,
+      "storageSize": true
+    }
+  },
+  
+  "performance": {
+    "batchProcessing": true,
+    "indexing": true,
+    "partitioning": true,
+    "compression": true,
+    "connectionPooling": true
+  }
+} 

@@ -20,98 +20,98 @@ public class IntegrationTestModule : ITemplateModule
         var outputPath = context.GetIntegrationTestsProjectPath();
 
         // Create project structure
-        await CreateProjectStructureAsync(outputPath, config);
+        await CreateProjectStructureAsync(context, config);
 
         // Generate integration tests for each aggregate
         if (config.Domain?.Aggregates != null)
         {
             foreach (var aggregate in config.Domain.Aggregates)
             {
-                await GenerateAggregateIntegrationTestsAsync(outputPath, config, aggregate);
+                await GenerateAggregateIntegrationTestsAsync(context, config, aggregate);
             }
         }
 
         // Generate test infrastructure
-        await GenerateTestInfrastructureAsync(outputPath, config);
+        await GenerateTestInfrastructureAsync(context, config);
     }
 
-    private async Task CreateProjectStructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task CreateProjectStructureAsync(GenerationContext context, TemplateConfiguration config)
     {
-        Directory.CreateDirectory(outputPath);
-        Directory.CreateDirectory(Path.Combine(outputPath, "Api"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Database"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "EndToEnd"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Fixtures"));
-        Directory.CreateDirectory(Path.Combine(outputPath, "Helpers"));
+        Directory.CreateDirectory(context.GetIntegrationTestsProjectPath());
+        Directory.CreateDirectory(Path.Combine(context.GetIntegrationTestsProjectPath(), "Api"));
+        Directory.CreateDirectory(Path.Combine(context.GetIntegrationTestsProjectPath(), "Database"));
+        Directory.CreateDirectory(Path.Combine(context.GetIntegrationTestsProjectPath(), "EndToEnd"));
+        Directory.CreateDirectory(Path.Combine(context.GetIntegrationTestsProjectPath(), "Fixtures"));
+        Directory.CreateDirectory(Path.Combine(context.GetIntegrationTestsProjectPath(), "Helpers"));
 
-        // Generate .csproj file
-        var csprojContent = GenerateProjectFile(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, $"{config.MicroserviceName}.Integration.Tests.csproj"), csprojContent);
+        // Generate test project file
+        var csprojContent = GenerateIntegrationTestProjectFile(config);
+        await context.WriteFileAsync($"tests/{config.MicroserviceName}.Integration.Tests.csproj", csprojContent);
 
         // Generate test settings
         var testSettingsContent = GenerateTestSettings(config);
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "appsettings.Test.json"), testSettingsContent);
+        await context.WriteFileAsync($"tests/appsettings.Test.json", testSettingsContent);
 
-        // Generate GlobalUsings
+        // Generate global usings
         var globalUsingsContent = GenerateGlobalUsings();
-        await File.WriteAllTextAsync(Path.Combine(outputPath, "GlobalUsings.cs"), globalUsingsContent);
+        await context.WriteFileAsync($"tests/GlobalUsings.cs", globalUsingsContent);
     }
 
-    private async Task GenerateAggregateIntegrationTestsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate)
+    private async Task GenerateAggregateIntegrationTestsAsync(GenerationContext context, TemplateConfiguration config, AggregateConfiguration aggregate)
     {
         // Generate API integration tests
         var apiTestContent = GenerateApiIntegrationTests(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Api", $"{aggregate.Name}ApiIntegrationTests.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Api/{aggregate.Name}ApiIntegrationTests.cs", 
             apiTestContent);
 
         // Generate database integration tests
         var dbTestContent = GenerateDatabaseIntegrationTests(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Database", $"{aggregate.Name}DatabaseIntegrationTests.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Database/{aggregate.Name}DatabaseIntegrationTests.cs", 
             dbTestContent);
 
         // Generate end-to-end tests
         var e2eTestContent = GenerateEndToEndTests(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "EndToEnd", $"{aggregate.Name}EndToEndTests.cs"), 
+        await context.WriteFileAsync(
+            $"tests/EndToEnd/{aggregate.Name}EndToEndTests.cs", 
             e2eTestContent);
     }
 
-    private async Task GenerateTestInfrastructureAsync(string outputPath, TemplateConfiguration config)
+    private async Task GenerateTestInfrastructureAsync(GenerationContext context, TemplateConfiguration config)
     {
         // Generate test application factory
         var testFactoryContent = GenerateTestApplicationFactory(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Fixtures", "TestApplicationFactory.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Fixtures/TestApplicationFactory.cs", 
             testFactoryContent);
 
         // Generate database fixture
         var dbFixtureContent = GenerateDatabaseFixture(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Fixtures", "DatabaseFixture.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Fixtures/DatabaseFixture.cs", 
             dbFixtureContent);
 
         // Generate test data builder
         var testDataBuilderContent = GenerateTestDataBuilder(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Helpers", "TestDataBuilder.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Helpers/TestDataBuilder.cs", 
             testDataBuilderContent);
 
         // Generate HTTP client extensions
         var httpExtensionsContent = GenerateHttpClientExtensions(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Helpers", "HttpClientExtensions.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Helpers/HttpClientExtensions.cs", 
             httpExtensionsContent);
 
         // Generate test containers setup
         var testContainersContent = GenerateTestContainersSetup(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Fixtures", "TestContainersSetup.cs"), 
+        await context.WriteFileAsync(
+            $"tests/Fixtures/TestContainersSetup.cs", 
             testContainersContent);
     }
 
-    private string GenerateProjectFile(TemplateConfiguration config)
+    private string GenerateIntegrationTestProjectFile(TemplateConfiguration config)
     {
         // Calculate relative paths from tests to source projects
         var structure = config.ProjectStructure ?? new ProjectStructureConfiguration();

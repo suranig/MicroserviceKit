@@ -44,37 +44,29 @@ public class MessagingModule : ITemplateModule
     private async Task GenerateRabbitMQInfrastructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
-
-        // Create messaging directories
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Messaging"));
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Messaging", "Configuration"));
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Messaging", "Publishers"));
-        Directory.CreateDirectory(Path.Combine(infrastructurePath, "Messaging", "Consumers"));
 
         // Generate RabbitMQ configuration
         var rabbitMQConfig = GenerateRabbitMQConfiguration(config);
         await context.WriteFileAsync(
-            Path.Combine("Messaging", "Configuration", "RabbitMQConfiguration.cs"),
+            "src/Infrastructure/Messaging/Configuration/RabbitMQConfiguration.cs",
             rabbitMQConfig);
 
         // Generate event publisher
         var eventPublisher = GenerateEventPublisher(config);
         await context.WriteFileAsync(
-            Path.Combine("Messaging", "Publishers", "DomainEventPublisher.cs"),
+            "src/Infrastructure/Messaging/Publishers/DomainEventPublisher.cs",
             eventPublisher);
 
         // Generate outbox repository
         var outboxRepository = GenerateOutboxRepository(config);
         await context.WriteFileAsync(
-            Path.Combine("Messaging", "Publishers", "OutboxRepository.cs"),
+            "src/Infrastructure/Messaging/Publishers/OutboxRepository.cs",
             outboxRepository);
     }
 
     private async Task GenerateDomainEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var domainPath = context.GetDomainProjectPath();
 
         // Generate additional domain events for the aggregate
         var events = new[]
@@ -87,25 +79,20 @@ public class MessagingModule : ITemplateModule
         {
             var eventContent = GenerateDomainEvent(config, aggregate, eventName);
             await context.WriteFileAsync(
-                Path.Combine("Events", $"{eventName}.cs"),
+                $"src/Domain/Events/{eventName}.cs",
                 eventContent);
         }
 
         // Generate integration events
         var integrationEventContent = GenerateIntegrationEvent(config, aggregate);
         await context.WriteFileAsync(
-            Path.Combine("Events", $"{aggregate.Name}IntegrationEvent.cs"),
+            $"src/Domain/Events/{aggregate.Name}IntegrationEvent.cs",
             integrationEventContent);
     }
 
     private async Task GenerateEventHandlersAsync(GenerationContext context, AggregateConfiguration aggregate)
     {
         var config = context.Configuration;
-        var applicationPath = context.GetApplicationProjectPath();
-
-        // Create event handlers directory
-        var eventHandlersPath = Path.Combine(applicationPath, aggregate.Name, "EventHandlers");
-        Directory.CreateDirectory(eventHandlersPath);
 
         // Generate domain event handlers
         var events = new[]
@@ -119,71 +106,65 @@ public class MessagingModule : ITemplateModule
         {
             var handlerContent = GenerateEventHandler(config, aggregate, eventName);
             await context.WriteFileAsync(
-                Path.Combine(aggregate.Name, "EventHandlers", $"{eventName}Handler.cs"),
+                $"src/Application/{aggregate.Name}/EventHandlers/{eventName}Handler.cs",
                 handlerContent);
         }
 
         // Generate read model updater
         var readModelUpdater = GenerateReadModelUpdater(config, aggregate);
         await context.WriteFileAsync(
-            Path.Combine(aggregate.Name, "EventHandlers", $"{aggregate.Name}ReadModelUpdater.cs"),
+            $"src/Application/{aggregate.Name}/EventHandlers/{aggregate.Name}ReadModelUpdater.cs",
             readModelUpdater);
     }
 
     private async Task GenerateEventDispatcherAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var applicationPath = context.GetApplicationProjectPath();
-
-        // Create common directory
-        Directory.CreateDirectory(Path.Combine(applicationPath, "Common", "Events"));
 
         // Generate event dispatcher interface
         var eventDispatcherInterface = GenerateEventDispatcherInterface(config);
         await context.WriteFileAsync(
-            Path.Combine("Common", "Events", "IEventDispatcher.cs"),
+            "src/Application/Common/Events/IEventDispatcher.cs",
             eventDispatcherInterface);
 
         // Generate event dispatcher implementation
         var eventDispatcher = GenerateEventDispatcher(config);
         await context.WriteFileAsync(
-            Path.Combine("Common", "Events", "EventDispatcher.cs"),
+            "src/Application/Common/Events/EventDispatcher.cs",
             eventDispatcher);
 
         // Generate event handler interface
         var eventHandlerInterface = GenerateEventHandlerInterface(config);
         await context.WriteFileAsync(
-            Path.Combine("Common", "Events", "IEventHandler.cs"),
+            "src/Application/Common/Events/IEventHandler.cs",
             eventHandlerInterface);
     }
 
     private async Task GenerateOutboxPatternAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate outbox entity
         var outboxEntity = GenerateOutboxEntity(config);
         await context.WriteFileAsync(
-            Path.Combine("Messaging", "OutboxEvent.cs"),
+            "src/Infrastructure/Messaging/OutboxEvent.cs",
             outboxEntity);
 
         // Generate outbox processor
         var outboxProcessor = GenerateOutboxProcessor(config);
         await context.WriteFileAsync(
-            Path.Combine("Messaging", "OutboxProcessor.cs"),
+            "src/Infrastructure/Messaging/OutboxProcessor.cs",
             outboxProcessor);
     }
 
     private async Task GenerateMessagingExtensionsAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var infrastructurePath = context.GetInfrastructureProjectPath();
 
         // Generate messaging extensions
         var messagingExtensions = GenerateMessagingExtensions(config);
         await context.WriteFileAsync(
-            Path.Combine("Extensions", "MessagingExtensions.cs"),
+            "src/Infrastructure/Extensions/MessagingExtensions.cs",
             messagingExtensions);
     }
 
@@ -945,8 +926,7 @@ using {config.Namespace}.Infrastructure.Messaging;";
         services.AddRabbitMQ(configuration);
         services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
         services.AddScoped<IOutboxRepository, OutboxRepository>();
-        services.AddHostedService<OutboxProcessor>();
-        services.AddScoped<IEventDispatcher, EventDispatcher>;";
+        services.AddHostedService<OutboxProcessor>;";
 
                 var returnIndex = content.LastIndexOf("return services;");
                 if (returnIndex != -1)

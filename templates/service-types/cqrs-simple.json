@@ -1,0 +1,78 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "CQRS service without Event Sourcing for moderate business complexity",
+  
+  "architecture": {
+    "level": "standard",
+    "patterns": {
+      "DDD": "enabled",
+      "CQRS": "enabled",
+      "EventSourcing": "disabled"
+    }
+  },
+  
+  "features": {
+    "api": {
+      "style": "controllers",
+      "authentication": "jwt",
+      "documentation": "swagger"
+    },
+    "persistence": {
+      "provider": "postgresql",
+      "migrations": "enabled",
+      "readModel": "same"
+    },
+    "messaging": {
+      "enabled": true,
+      "provider": "rabbitmq",
+      "patterns": ["outbox", "events"]
+    },
+    "testing": {
+      "level": "integration",
+      "framework": "xunit",
+      "mockingEnabled": true,
+      "testContainersEnabled": true
+    },
+    "deployment": {
+      "docker": "enabled",
+      "healthChecks": "enabled"
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "{{aggregateName}}",
+        "properties": [
+          {
+            "name": "Id",
+            "type": "Guid",
+            "isRequired": true
+          },
+          {
+            "name": "Name",
+            "type": "string",
+            "isRequired": true
+          },
+          {
+            "name": "Description",
+            "type": "string",
+            "isRequired": false
+          },
+          {
+            "name": "CreatedAt",
+            "type": "DateTime",
+            "isRequired": true
+          },
+          {
+            "name": "UpdatedAt",
+            "type": "DateTime",
+            "isRequired": false
+          }
+        ],
+                          "operations": ["Create", "Update", "Delete"]
+       }
+     ]
+   }
+ }  
