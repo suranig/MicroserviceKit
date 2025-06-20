@@ -137,9 +137,8 @@ public class GenerateService
                     {
                         new() { Name = "Id", Type = "Guid", IsRequired = true },
                         new() { Name = "Name", Type = "string", IsRequired = true },
-                        new() { Name = "Description", Type = "string", IsRequired = false },
-                        new() { Name = "CreatedAt", Type = "DateTime", IsRequired = true },
-                        new() { Name = "UpdatedAt", Type = "DateTime", IsRequired = false }
+                        new() { Name = "Description", Type = "string", IsRequired = false }
+                        // CreatedAt and UpdatedAt are automatically added by DDD Module
                     },
                     Operations = new List<string> { "Create", "Update", "Delete" }
                 }).ToList();
