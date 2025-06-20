@@ -66,6 +66,7 @@
     <ProjectReference Include="..\..\Modules\ReadModels\ReadModels.csproj" />
     <ProjectReference Include="..\..\Modules\Tests\Tests.csproj" />
     <ProjectReference Include="..\..\Modules\Deployment\Deployment.csproj" />
+    <ProjectReference Include="..\..\Modules\Docker\Docker.csproj" />
   </ItemGroup>
 
 </Project> 
