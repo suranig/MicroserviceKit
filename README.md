@@ -124,12 +124,6 @@ Perfect for production microservices with complex business requirements:
 ### 🏗️ Architecture Levels
 Choose based on your project complexity:
 
-#### **`minimal-service.json`** 🚀 Quick Start
-- **Use for**: Prototypes, simple CRUD operations, learning
-- **Complexity**: Simple (5 minutes)
-- **Features**: Minimal API, In-memory DB, Basic CRUD
-- **Perfect for**: MVPs, Proof of concepts, Simple utilities
-
 #### **`standard-service.json`** 📊 Balanced
 - **Use for**: Standard business applications, moderate complexity
 - **Complexity**: Medium (10 minutes)
