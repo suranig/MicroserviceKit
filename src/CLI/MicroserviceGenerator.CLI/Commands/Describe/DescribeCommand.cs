@@ -11,19 +11,21 @@ public static class DescribeCommand
         
         var templateArgument = new Argument<string>("template", "Template name or path");
         var formatOption = new Option<string>("--format", () => "table", "Output format (table, json, markdown)");
+        var descriptionOption = new Option<bool>("--description", "Show only the description and when to use information");
         
         command.AddArgument(templateArgument);
         command.AddOption(formatOption);
+        command.AddOption(descriptionOption);
         
-        command.SetHandler(async (template, format) =>
+        command.SetHandler(async (template, format, descriptionOnly) =>
         {
-            await ExecuteDescribeAsync(template, format);
-        }, templateArgument, formatOption);
+            await ExecuteDescribeAsync(template, format, descriptionOnly);
+        }, templateArgument, formatOption, descriptionOption);
         
         return command;
     }
     
-    private static async Task ExecuteDescribeAsync(string template, string format)
+    private static async Task ExecuteDescribeAsync(string template, string format, bool descriptionOnly)
     {
         try
         {
@@ -35,6 +37,12 @@ public static class DescribeCommand
                 Console.WriteLine($"❌ Template not found: {template}");
                 Console.WriteLine("\nUse 'microkit list templates' to see available templates.");
                 Environment.Exit(1);
+                return;
+            }
+            
+            if (descriptionOnly)
+            {
+                await ShowDescriptionOnlyAsync(templateInfo);
                 return;
             }
             
@@ -56,6 +64,30 @@ public static class DescribeCommand
             Console.WriteLine($"❌ Error describing template: {ex.Message}");
             Environment.Exit(1);
         }
+    }
+    
+    private static Task ShowDescriptionOnlyAsync(Models.TemplateInfo templateInfo)
+    {
+        Console.WriteLine($"📋 {templateInfo.Title}");
+        Console.WriteLine();
+        Console.WriteLine($"📝 Description:");
+        Console.WriteLine($"   {templateInfo.Description}");
+        Console.WriteLine();
+        
+        if (templateInfo.WhenToUse.Any())
+        {
+            Console.WriteLine($"🎯 When to use:");
+            foreach (var use in templateInfo.WhenToUse)
+            {
+                Console.WriteLine($"   • {use}");
+            }
+            Console.WriteLine();
+        }
+        
+        Console.WriteLine($"⏱️ Estimated Time: {templateInfo.EstimatedTime}");
+        Console.WriteLine($"🎚️ Complexity: {templateInfo.Complexity}");
+        
+        return Task.CompletedTask;
     }
     
     private static Task ShowTableDescriptionAsync(Models.TemplateInfo templateInfo)
