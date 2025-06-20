@@ -67,7 +67,7 @@ microkit new MyService --interactive
 **MicroserviceKit** is available on NuGet.org:
 
 - **Package**: [MicroserviceKit](https://www.nuget.org/packages/MicroserviceKit/)
-- **Current Version**: 0.3.0
+- **Current Version**: 0.4.0
 - **Command**: `microkit`
 - **Installation**: `dotnet tool install --global MicroserviceKit --prerelease`
 

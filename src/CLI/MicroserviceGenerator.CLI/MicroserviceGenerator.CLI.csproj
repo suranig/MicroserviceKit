@@ -18,29 +18,33 @@
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>
-🎉 Release 0.3.0 - Stabilization &amp; UX Improvements!
+🎉 Release 0.4.0 - Template Engine Stabilization &amp; Docker Support!
 
-✅ MAJOR IMPROVEMENTS:
-- 🛠️ Fixed Template Engine core functionality
-- 📝 Improved configuration handling and validation
-- 🧩 Enhanced module coordination and project references
-- 🏗️ Standardized architecture levels (minimal, standard, enterprise)
-- 🚚 Reorganized template system with proper structure
+✅ CRITICAL FIXES:
+- 🛠️ Fixed Template Engine path resolution issues causing files generated outside src/
+- 📁 Resolved directory structure problems - all files now properly placed in src/ and tests/
+- 🏷️ Fixed hardcoded 'Order' aggregate names - now parametrized based on service name
+- 🔧 Standardized all template modules to use consistent path generation patterns
 
 ✅ NEW FEATURES:
-- 📋 New template organization system with examples
-- 🔄 Docker deployment improvements
-- 🧪 Enhanced testing generation
-- 🧰 Fixed module dependencies and project structure
-- 🐛 Core Engine Fixes (dependency management, namespaces)
+- 🐳 Complete Docker support with Dockerfile, docker-compose.yml, and Makefile generation
+- 📦 Added PostgreSQL, Redis, RabbitMQ services in docker-compose
+- 🔄 Comprehensive Makefile with build, test, docker, and migration commands
+- 🚀 Production-ready multi-stage Dockerfile for .NET 8
 
-✅ UX IMPROVEMENTS:
-- 📚 Improved documentation and examples
-- 🛠️ Better error handling and validation
-- 🔄 Enhanced template application process
-- 🏗️ Consistent project structure generation
+✅ MODULE IMPROVEMENTS:
+- 📡 Switched from Wolverine to MassTransit for better enterprise messaging stability
+- 🧪 Enhanced ApplicationModule with proper CQRS command/query generation
+- 📋 Fixed ReadModelsModule and ExternalServicesModule path generation
+- 🧩 Improved UnitTestModule and IntegrationTestModule file placement
 
-🚀 PRODUCTION READY: Generate clean, well-structured microservices with proper architecture and project organization!
+✅ CODE GENERATION:
+- 🏗️ Fixed parameter generation to use PascalCase properties
+- 📝 Improved validation rules and entity construction logic
+- 🔗 Enhanced project references and dependency management
+- 📊 Better string interpolation handling in generated code
+
+🚀 PRODUCTION READY: Generate fully containerized microservices with clean architecture and proper file organization!
     </PackageReleaseNotes>
   </PropertyGroup>
 

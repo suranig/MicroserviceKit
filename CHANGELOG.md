@@ -5,6 +5,47 @@ All notable changes to MicroserviceKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Released] - v0.4.0 - 2024-12-19
+
+### 🛠️ Critical Template Engine Fixes
+- **FIXED**: Template Engine path resolution issues causing files generated outside `src/` directory
+- **FIXED**: Directory structure problems - all files now properly placed in `src/` and `tests/`
+- **FIXED**: Hardcoded 'Order' aggregate names - now parametrized based on service name
+- **FIXED**: Standardized all template modules to use consistent path generation patterns
+
+### 🐳 Complete Docker Support
+- **NEW**: DockerModule for comprehensive containerization
+- **NEW**: Multi-stage Dockerfile generation for .NET 8 production builds
+- **NEW**: docker-compose.yml with PostgreSQL, Redis, RabbitMQ services
+- **NEW**: Comprehensive Makefile with build, test, docker, and migration commands
+- **NEW**: Production-ready container orchestration
+
+### 📡 Enhanced Messaging & CQRS
+- **CHANGED**: Switched from Wolverine to MassTransit for better enterprise messaging stability
+- **FIXED**: ApplicationModule CQRS command/query generation
+- **FIXED**: Parameter generation to use PascalCase properties
+- **FIXED**: MassTransit IConsumer<T>.Consume() method signatures
+- **ENHANCED**: Validation rules and entity construction logic
+
+### 🧩 Module Improvements
+- **FIXED**: ReadModelsModule path generation and File.WriteAllTextAsync usage
+- **FIXED**: ExternalServicesModule to use proper relative paths
+- **FIXED**: UnitTestModule and IntegrationTestModule file placement
+- **FIXED**: MessagingModule path resolution for events and handlers
+- **STANDARDIZED**: All modules now use context.WriteFileAsync with relative paths
+
+### 🏗️ Code Generation Enhancements
+- **IMPROVED**: String interpolation handling in generated project files
+- **ENHANCED**: Project references and dependency management
+- **FIXED**: Template placeholder replacement in aggregate names
+- **OPTIMIZED**: Directory creation - now handled automatically by WriteFileAsync
+
+### 📦 Project Structure & Dependencies
+- **ADDED**: DockerModule registration in DI container
+- **ADDED**: Required project references for Docker module
+- **UPDATED**: CLI project file with Docker module dependency
+- **FIXED**: Missing using statements and namespace references
+
 ## [Unreleased] - v0.3.0
 
 ### 📨 **Messaging & Event-Driven Architecture**
