@@ -6,11 +6,25 @@ namespace MicroserviceGenerator.CLI.Services;
 
 public class TemplateService
 {
-    private readonly string _templatesPath = "../../../templates";
+    private readonly string _templatesPath;
+    
+    public TemplateService()
+    {
+        // Get the directory where the CLI assembly is located
+        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+        
+        // Navigate to the templates directory from the CLI assembly location
+        // CLI is in: src/CLI/MicroserviceGenerator.CLI/bin/Debug/net8.0/
+        // Templates are in: templates/
+        _templatesPath = Path.Combine(assemblyDirectory!, "..", "..", "..", "..", "..", "..", "templates");
+        _templatesPath = Path.GetFullPath(_templatesPath);
+    }
     
     public async Task<List<TemplateInfo>> LoadTemplatesAsync()
     {
         var indexPath = Path.Combine(_templatesPath, "index.json");
+        
         if (!File.Exists(indexPath))
         {
             // If index doesn't exist, scan for templates manually
@@ -20,6 +34,7 @@ public class TemplateService
         try
         {
             var json = await File.ReadAllTextAsync(indexPath);
+            
             var index = JsonSerializer.Deserialize<TemplateIndex>(json, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -35,13 +50,15 @@ public class TemplateService
             {
                 foreach (var template in category.Value.Templates)
                 {
+                    var templatePath = Path.Combine(_templatesPath, category.Value.Path, template.Name);
+                    
                     templates.Add(new TemplateInfo
                     {
                         Name = template.Name,
                         Title = template.Title,
                         Description = template.Description,
                         Category = category.Key,
-                        Path = Path.Combine(_templatesPath, category.Value.Path, template.Name),
+                        Path = templatePath,
                         Complexity = template.Complexity,
                         EstimatedTime = template.EstimatedTime,
                         Features = template.Features,

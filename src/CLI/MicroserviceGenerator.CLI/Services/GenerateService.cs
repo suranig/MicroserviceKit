@@ -1,6 +1,10 @@
 using MicroserviceGenerator.CLI.Models;
 using Microservice.Core.TemplateEngine.Configuration;
 using Microservice.Core.TemplateEngine;
+using Microservice.Core.TemplateEngine.Abstractions;
+using Microservice.Core.TemplateEngine.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MicroserviceGenerator.CLI.Services;
 
@@ -8,11 +12,38 @@ public class GenerateService
 {
     private readonly TemplateService _templateService;
     private readonly ValidationService _validationService;
+    private readonly IServiceProvider _serviceProvider;
     
     public GenerateService()
     {
         _templateService = new TemplateService();
         _validationService = new ValidationService();
+        _serviceProvider = ConfigureServices();
+    }
+    
+    private IServiceProvider ConfigureServices()
+    {
+        var services = new ServiceCollection();
+        
+        // Add logging
+        services.AddLogging(builder => builder.AddConsole());
+        
+        // Add Template Engine
+        services.AddSingleton<ITemplateEngine, Microservice.Core.TemplateEngine.TemplateEngine>();
+        
+        // Register all modules directly by type
+        services.AddSingleton<ITemplateModule, Microservice.Modules.DDD.DDDModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Application.ApplicationModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Infrastructure.InfrastructureModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Api.ApiModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Api.RestApiModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.ExternalServices.ExternalServicesModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Messaging.MessagingModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.ReadModels.ReadModelsModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Tests.UnitTestModule>();
+        services.AddSingleton<ITemplateModule, Microservice.Modules.Tests.IntegrationTestModule>();
+        
+        return services.BuildServiceProvider();
     }
     
     public async Task GenerateAsync(GenerationOptions options)
@@ -51,7 +82,7 @@ public class GenerateService
         
         Console.WriteLine($"🔧 Applying customizations...");
         
-        // Generate microservice using simple approach
+        // Generate microservice using Template Engine
         await GenerateMicroserviceAsync(config);
         
         Console.WriteLine($"📁 Files generated in: {Path.GetFullPath(options.OutputPath)}");
@@ -62,6 +93,18 @@ public class GenerateService
         // Update basic properties
         config.MicroserviceName = options.ServiceName;
         config.OutputPath = options.OutputPath;
+        config.Namespace = $"{options.ServiceName}";
+        
+        // Set up project structure configuration
+        config.ProjectStructure = new ProjectStructureConfiguration
+        {
+            SourceDirectory = "src",
+            DomainProjectPath = "src/Domain",
+            ApplicationProjectPath = "src/Application", 
+            InfrastructureProjectPath = "src/Infrastructure",
+            ApiProjectPath = "src/Api",
+            TestsProjectPath = "tests"
+        };
         
         // Apply custom aggregates
         if (options.CustomAggregates.Any())
@@ -148,145 +191,42 @@ public class GenerateService
     
     private async Task GenerateMicroserviceAsync(TemplateConfiguration config)
     {
+        Console.WriteLine($"🚀 Starting code generation with Template Engine...");
+        
         // Create output directory
         Directory.CreateDirectory(config.OutputPath);
         
-        // Generate basic project structure
-        await GenerateProjectStructureAsync(config);
+        // Create generation context
+        var context = new GenerationContext(config);
         
-        // Generate solution file
-        await GenerateSolutionFileAsync(config);
+        // Get Template Engine from DI
+        var templateEngine = _serviceProvider.GetRequiredService<ITemplateEngine>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<GenerateService>>();
         
-        // Generate README
-        await GenerateReadmeAsync(config);
-        
-        Console.WriteLine($"✅ Basic project structure generated");
-    }
-    
-    private async Task GenerateProjectStructureAsync(TemplateConfiguration config)
-    {
-        var srcPath = Path.Combine(config.OutputPath, "src");
-        Directory.CreateDirectory(srcPath);
-        
-        // Create basic directories
-        Directory.CreateDirectory(Path.Combine(srcPath, "Domain"));
-        Directory.CreateDirectory(Path.Combine(srcPath, "Application"));
-        Directory.CreateDirectory(Path.Combine(srcPath, "Infrastructure"));
-        Directory.CreateDirectory(Path.Combine(srcPath, "Api"));
-        
-        var testsPath = Path.Combine(config.OutputPath, "tests");
-        Directory.CreateDirectory(testsPath);
-        
-        Console.WriteLine($"   📁 Created project directories");
-    }
-    
-    private async Task GenerateSolutionFileAsync(TemplateConfiguration config)
-    {
-        var solutionContent = $@"Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
-MinimumVisualStudioVersion = 10.0.40219.1
-
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Domain"", ""src\Domain\{config.MicroserviceName}.Domain.csproj"", ""{{5C9F7570-3036-466E-B4EF-3307486F3391}}""
-EndProject
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Application"", ""src\Application\{config.MicroserviceName}.Application.csproj"", ""{{F736B777-1905-48BC-9DF0-CB561A7BF9D2}}""
-EndProject
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Infrastructure"", ""src\Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"", ""{{536A1C0B-964A-4830-A8F1-1B296CD5E2D3}}""
-EndProject
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Api"", ""src\Api\{config.MicroserviceName}.Api.csproj"", ""{{373FE1FF-A402-4860-83F9-CA5E902468E4}}""
-EndProject
-Project(""{{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}}"") = ""{config.MicroserviceName}.Tests"", ""tests\{config.MicroserviceName}.Tests.csproj"", ""{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D5}}""
-EndProject
-
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{{5C9F7570-3036-466E-B4EF-3307486F3391}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{{5C9F7570-3036-466E-B4EF-3307486F3391}}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{{5C9F7570-3036-466E-B4EF-3307486F3391}}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{{5C9F7570-3036-466E-B4EF-3307486F3391}}.Release|Any CPU.Build.0 = Release|Any CPU
-		{{F736B777-1905-48BC-9DF0-CB561A7BF9D2}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{{F736B777-1905-48BC-9DF0-CB561A7BF9D2}}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{{F736B777-1905-48BC-9DF0-CB561A7BF9D2}}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{{F736B777-1905-48BC-9DF0-CB561A7BF9D2}}.Release|Any CPU.Build.0 = Release|Any CPU
-		{{536A1C0B-964A-4830-A8F1-1B296CD5E2D3}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{{536A1C0B-964A-4830-A8F1-1B296CD5E2D3}}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{{536A1C0B-964A-4830-A8F1-1B296CD5E2D3}}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{{536A1C0B-964A-4830-A8F1-1B296CD5E2D3}}.Release|Any CPU.Build.0 = Release|Any CPU
-		{{373FE1FF-A402-4860-83F9-CA5E902468E4}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{{373FE1FF-A402-4860-83F9-CA5E902468E4}}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{{373FE1FF-A402-4860-83F9-CA5E902468E4}}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{{373FE1FF-A402-4860-83F9-CA5E902468E4}}.Release|Any CPU.Build.0 = Release|Any CPU
-		{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D5}}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D5}}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D5}}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{{8B2A1C0B-964A-4830-A8F1-1B296CD5E2D5}}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-EndGlobal";
-
-        var solutionPath = Path.Combine(config.OutputPath, $"{config.MicroserviceName}.sln");
-        await File.WriteAllTextAsync(solutionPath, solutionContent);
-        
-        Console.WriteLine($"   📄 Generated solution file: {config.MicroserviceName}.sln");
-    }
-    
-    private async Task GenerateReadmeAsync(TemplateConfiguration config)
-    {
-        var readmeContent = $@"# {config.MicroserviceName}
-
-Generated microservice using MicroserviceKit.
-
-## Architecture
-
-This microservice implements:
-- Clean Architecture
-- Domain-Driven Design (DDD)
-- CQRS patterns
-- Event-driven architecture
-
-## Getting Started
-
-### Prerequisites
-- .NET 8.0 SDK
-
-### Running locally
-```bash
-dotnet restore
-dotnet build
-dotnet run --project src/Api/{config.MicroserviceName}.Api
-```
-
-## API Documentation
-
-The API will be available at: http://localhost:5000/swagger
-
-## Generated Features
-
-{(config.Domain?.Aggregates?.Any() == true ? 
-    $"### Aggregates\n{string.Join("\n", config.Domain.Aggregates.Select(a => $"- **{a.Name}**: {string.Join(", ", a.Properties.Select(p => $"{p.Name} ({p.Type})"))}"))} " : 
-    "No aggregates defined")}
-
-{(config.Features?.ExternalServices?.Services?.Any() == true ? 
-    $"### External Services\n{string.Join("\n", config.Features.ExternalServices.Services.Select(s => $"- **{s.Name}**: {s.BaseUrl}"))}" : 
-    "")}
-
-## Configuration
-
-Generated with:
-- Database: {config.GetDatabaseProvider()}
-- Read Model: {config.GetReadModelProvider()}
-- Architecture Level: {config.Architecture?.Level ?? "standard"}
-";
-
-        var readmePath = Path.Combine(config.OutputPath, "README.md");
-        await File.WriteAllTextAsync(readmePath, readmeContent);
-        
-        Console.WriteLine($"   📄 Generated README.md");
+        try
+        {
+            // Generate using Template Engine
+            await templateEngine.GenerateAsync(context, config);
+            
+            Console.WriteLine($"✅ Code generation completed successfully!");
+            Console.WriteLine($"📊 Generated {context.GeneratedFiles.Count} files");
+            
+            // Show summary of generated files
+            var filesByType = context.GeneratedFiles
+                .GroupBy(f => Path.GetExtension(f.Path))
+                .OrderBy(g => g.Key);
+                
+            foreach (var group in filesByType)
+            {
+                var extension = string.IsNullOrEmpty(group.Key) ? "no extension" : group.Key;
+                Console.WriteLine($"   📄 {group.Count()} {extension} files");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during code generation");
+            Console.WriteLine($"❌ Code generation failed: {ex.Message}");
+            throw;
+        }
     }
 } 

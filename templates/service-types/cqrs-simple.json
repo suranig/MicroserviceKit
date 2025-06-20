@@ -4,30 +4,39 @@
   "description": "CQRS service without Event Sourcing for moderate business complexity",
   
   "architecture": {
-    "pattern": "cqrs-simple",
-    "complexity": "medium",
-    "layers": ["Domain", "Application", "Infrastructure", "Api"]
+    "level": "standard",
+    "patterns": {
+      "DDD": "enabled",
+      "CQRS": "enabled",
+      "EventSourcing": "disabled"
+    }
   },
   
   "features": {
-    "cqrs": {
-      "enabled": true,
-      "commandHandlers": true,
-      "queryHandlers": true,
-      "separateReadWrite": true
+    "api": {
+      "style": "controllers",
+      "authentication": "jwt",
+      "documentation": "swagger"
     },
-    "eventSourcing": {
-      "enabled": false
+    "persistence": {
+      "provider": "postgresql",
+      "migrations": "enabled",
+      "readModel": "same"
     },
-    "domainEvents": {
+    "messaging": {
       "enabled": true,
-      "eventDispatcher": true,
-      "eventHandlers": true
+      "provider": "rabbitmq",
+      "patterns": ["outbox", "events"]
     },
-    "cleanArchitecture": {
-      "enabled": true,
-      "dependencyInversion": true,
-      "separationOfConcerns": true
+    "testing": {
+      "level": "integration",
+      "framework": "xunit",
+      "mockingEnabled": true,
+      "testContainersEnabled": true
+    },
+    "deployment": {
+      "docker": "enabled",
+      "healthChecks": "enabled"
     }
   },
   
@@ -35,122 +44,35 @@
     "aggregates": [
       {
         "name": "{{aggregateName}}",
-        "entities": ["{{aggregateName}}"],
-        "valueObjects": ["{{aggregateName}}Id", "{{aggregateName}}Status"],
-        "domainEvents": [
-          "{{aggregateName}}Created",
-          "{{aggregateName}}Updated",
-          "{{aggregateName}}Deleted"
-        ]
-      }
-    ],
-    "domainServices": [],
-    "specifications": true
-  },
-  
-  "application": {
-    "commands": [
-      {
-        "name": "Create{{aggregateName}}",
-        "handler": "Create{{aggregateName}}Handler",
-        "validation": true
-      },
-      {
-        "name": "Update{{aggregateName}}",
-        "handler": "Update{{aggregateName}}Handler",
-        "validation": true
-      },
-      {
-        "name": "Delete{{aggregateName}}",
-        "handler": "Delete{{aggregateName}}Handler",
-        "validation": true
-      }
-    ],
-    "queries": [
-      {
-        "name": "Get{{aggregateName}}ById",
-        "handler": "Get{{aggregateName}}ByIdHandler",
-        "returnType": "{{aggregateName}}Dto"
-      },
-      {
-        "name": "Get{{aggregateName}}List",
-        "handler": "Get{{aggregateName}}ListHandler",
-        "returnType": "PagedResult<{{aggregateName}}Dto>",
-        "pagination": true
-      }
-    ],
-    "eventHandlers": [
-      {
-        "event": "{{aggregateName}}Created",
-        "handler": "{{aggregateName}}CreatedHandler"
-      }
-    ]
-  },
-  
-  "infrastructure": {
-    "database": {
-      "provider": "postgresql",
-      "eventStore": false,
-      "readModel": "postgresql",
-      "connectionString": "{{connectionString}}"
-    },
-    "messaging": {
-      "provider": "rabbitmq",
-      "eventPublishing": true,
-      "eventSubscription": true
-    },
-    "caching": {
-      "provider": "redis",
-      "enabled": true,
-      "distributedCache": true
-    },
-    "externalServices": []
-  },
-  
-  "api": {
-    "type": "rest",
-    "versioning": true,
-    "swagger": true,
-    "authentication": "jwt",
-    "authorization": "policy-based",
-    "healthChecks": true,
-    "controllers": [
-      {
-        "name": "{{aggregateName}}Controller",
-        "actions": ["Create", "Update", "Delete", "GetById", "GetList"]
-      }
-    ]
-  },
-  
-  "testing": {
-    "unitTests": true,
-    "integrationTests": true,
-    "testContainers": true,
-    "architectureTests": true
-  },
-  
-  "deployment": {
-    "docker": {
-      "enabled": true,
-      "multiStage": true,
-      "healthCheck": true
-    },
-    "kubernetes": {
-      "enabled": true,
-      "deployment": true,
-      "service": true,
-      "configMap": true,
-      "secrets": true
-    }
-  },
-  
-  "monitoring": {
-    "healthChecks": true,
-    "metrics": true,
-    "logging": {
-      "structured": true,
-      "correlationId": true
-    },
-    "tracing": true
-  }
-} 
+        "properties": [
+          {
+            "name": "Id",
+            "type": "Guid",
+            "isRequired": true
+          },
+          {
+            "name": "Name",
+            "type": "string",
+            "isRequired": true
+          },
+          {
+            "name": "Description",
+            "type": "string",
+            "isRequired": false
+          },
+          {
+            "name": "CreatedAt",
+            "type": "DateTime",
+            "isRequired": true
+          },
+          {
+            "name": "UpdatedAt",
+            "type": "DateTime",
+            "isRequired": false
+          }
+        ],
+                          "operations": ["Create", "Update", "Delete"]
+       }
+     ]
+   }
+ }  
