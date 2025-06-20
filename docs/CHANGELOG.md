@@ -5,6 +5,141 @@ All notable changes to MicroserviceKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Released] - v0.4.0
+
+### 🚀 Major Bug Fixes & Improvements
+
+#### Template Engine Path Resolution
+- **FIXED**: Critical path resolution issue where files were generated outside intended output directory
+- **FIXED**: Double path combining in `WriteFileAsync()` calls across all modules
+- **FIXED**: Template Engine now correctly uses relative paths with proper `src/` and `tests/` prefixes
+- **IMPROVED**: Clean project structure generation with everything in correct locations
+- **ENHANCED**: File generation increased from ~68 to 90 files including Docker support
+
+#### Code Generation Quality
+- **FIXED**: Parametrized aggregate names instead of hardcoded 'Order' references
+- **IMPROVED**: Service name to aggregate name conversion (e.g., ProductService → Product)
+- **FIXED**: PascalCase property generation in commands and queries
+- **FIXED**: String interpolation conflicts in project file templates
+- **ENHANCED**: Template placeholder replacement for dynamic content
+
+#### ApplicationModule Enhancements
+- **SWITCHED**: From Wolverine to MassTransit for better enterprise stability
+- **FIXED**: MassTransit `IConsumer<T>.Consume()` method to return `Task` instead of `Task<Guid>`
+- **IMPROVED**: Command/query handler generation with proper parameter handling
+- **FIXED**: Validation rules to use correct property names
+- **ENHANCED**: Entity construction with proper constructor parameters
+
+#### Docker & Containerization
+- **NEW**: Complete DockerModule implementation with proper DI registration
+- **ADDED**: Dockerfile, docker-compose.yml, and Makefile generation
+- **FIXED**: DockerModule dependencies and project references
+- **IMPLEMENTED**: Full containerization support for generated microservices
+
+### 🔧 Module Standardization
+
+#### Path Generation Consistency
+- **STANDARDIZED**: All modules now use consistent relative path patterns
+- **FIXED**: DDDModule to use `src/Domain/` prefix for all generated files
+- **FIXED**: RestApiModule to use `src/Api/` prefix consistently
+- **FIXED**: IntegrationTestModule to use `tests/` prefix for test files
+- **FIXED**: ReadModelsModule path generation with proper `src/` prefixes
+- **FIXED**: ExternalServicesModule to use `src/Infrastructure/` prefix
+- **FIXED**: UnitTestModule to use `tests/` prefix instead of absolute paths
+- **FIXED**: MessagingModule path issues causing duplicated directory structures
+
+#### File Generation Patterns
+- **REPLACED**: All `File.WriteAllTextAsync` calls with `context.WriteFileAsync`
+- **REMOVED**: Manual `Directory.CreateDirectory` calls (handled by WriteFileAsync)
+- **STANDARDIZED**: Method signatures to include `GenerationContext` parameter
+- **IMPROVED**: Error handling and validation in all template modules
+
+### 🏗️ Architecture Improvements
+
+#### MassTransit Integration
+- **IMPLEMENTED**: Complete MassTransit setup with RabbitMQ transport
+- **ADDED**: Message consumers with proper error handling
+- **CONFIGURED**: Dependency injection for messaging infrastructure
+- **ENHANCED**: Event-driven architecture support
+
+#### Template Processing
+- **FIXED**: Template placeholder replacement in `ApplyCustomizations`
+- **IMPROVED**: Configuration validation before code generation
+- **ENHANCED**: Template processing pipeline with better error messages
+- **STANDARDIZED**: Handlebars template processing across all modules
+
+### 🧪 Testing & Quality
+
+#### Code Quality
+- **IMPROVED**: Generated code compilation success rate
+- **ENHANCED**: Template validation and error reporting
+- **STANDARDIZED**: Naming conventions across all generated files
+- **FIXED**: Namespace organization in generated projects
+
+#### Testing Infrastructure
+- **MAINTAINED**: Comprehensive test coverage for CLI functionality
+- **IMPROVED**: Integration test generation with proper setup
+- **ENHANCED**: Test data builders and utilities generation
+
+### 📦 CLI & Developer Experience
+
+#### Command Line Interface
+- **MAINTAINED**: All existing CLI functionality working correctly
+- **IMPROVED**: Error messages and validation feedback
+- **ENHANCED**: Template discovery and application process
+- **STANDARDIZED**: Output formatting and progress reporting
+
+#### Configuration Management
+- **IMPROVED**: Template configuration processing
+- **ENHANCED**: Feature flag handling across modules
+- **STANDARDIZED**: Configuration validation patterns
+
+### 🐛 Critical Bug Fixes
+
+#### Path Resolution Issues
+- **RESOLVED**: Files no longer generated in main `src/` directory
+- **FIXED**: Template Engine respects configured output paths
+- **CORRECTED**: Module path calculation logic
+- **ELIMINATED**: Double path combining causing incorrect file locations
+
+#### Code Generation Bugs
+- **FIXED**: Aggregate name parameterization throughout codebase
+- **RESOLVED**: Template placeholder conflicts
+- **CORRECTED**: Property naming consistency in generated code
+- **FIXED**: Method signature generation for handlers and consumers
+
+#### Module Integration
+- **RESOLVED**: Missing DockerModule registration in DI container
+- **FIXED**: Module dependency resolution
+- **CORRECTED**: Project reference generation
+- **STANDARDIZED**: Module interface implementations
+
+### 📋 Documentation & Release
+
+#### Version Management
+- **UPDATED**: CLI package version to 0.4.0
+- **ENHANCED**: Release notes and changelog documentation
+- **IMPROVED**: Version references in documentation
+
+#### Git Workflow
+- **IMPLEMENTED**: Thematic git commits for better history
+- **CREATED**: Proper git tags for release tracking
+- **MAINTAINED**: Clean commit history with logical grouping
+
+### 🚀 Performance & Reliability
+
+#### Generation Performance
+- **IMPROVED**: Template processing speed
+- **OPTIMIZED**: File I/O operations with proper async patterns
+- **ENHANCED**: Memory usage during generation process
+
+#### Error Handling
+- **STRENGTHENED**: Exception handling across all modules
+- **IMPROVED**: Validation error messages
+- **ENHANCED**: Recovery from generation failures
+
+---
+
 ## [Released] - v0.3.0
 
 ### 📨 **Messaging & Event-Driven Architecture**
