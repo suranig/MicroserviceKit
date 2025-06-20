@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>microkit</ToolCommandName>
     <PackageId>MicroserviceKit</PackageId>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Authors>Paweł Pilichowski</Authors>
     <Description>🚀 Complete toolkit for generating production-ready .NET 8 microservices with DDD, CQRS, Clean Architecture, Event-Driven Architecture, and comprehensive infrastructure. Generate enterprise-grade microservices with REST APIs, CQRS, MongoDB read models, RabbitMQ messaging, external service integration, Docker, and complete testing suite.</Description>
     <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;event-driven;mongodb;rabbitmq;docker;enterprise;microkit</PackageTags>
@@ -18,33 +18,27 @@
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>
-🎉 Release 0.4.0 - Template Engine Stabilization &amp; Docker Support!
+🎉 Release 0.4.1 - Critical Bug Fixes &amp; Production Stability!
 
-✅ CRITICAL FIXES:
-- 🛠️ Fixed Template Engine path resolution issues causing files generated outside src/
-- 📁 Resolved directory structure problems - all files now properly placed in src/ and tests/
-- 🏷️ Fixed hardcoded 'Order' aggregate names - now parametrized based on service name
-- 🔧 Standardized all template modules to use consistent path generation patterns
+🐛 CRITICAL BUG FIXES:
+- 🛠️ Fixed hardcoded entity constructor causing compilation errors - now flexible with developer guidance
+- 📁 Fixed fragile template path resolution causing "template not found" in packaged CLI
+- 🐳 Fixed Dockerfile path errors and conditional COPY statements for Docker build failures
+- 🔧 Fixed incorrect configuration property access in DockerModule
 
-✅ NEW FEATURES:
-- 🐳 Complete Docker support with Dockerfile, docker-compose.yml, and Makefile generation
-- 📦 Added PostgreSQL, Redis, RabbitMQ services in docker-compose
-- 🔄 Comprehensive Makefile with build, test, docker, and migration commands
-- 🚀 Production-ready multi-stage Dockerfile for .NET 8
+✅ TEMPLATE ENGINE IMPROVEMENTS:
+- 🎯 Robust multi-strategy template discovery (env vars, assembly location, directory traversal)
+- 📝 Enhanced entity creation with flexible constructor patterns and helpful comments
+- 🏗️ Conditional Docker project copying based on architecture level (minimal/standard/enterprise)
+- 🚀 Improved error handling and validation feedback throughout generation process
 
-✅ MODULE IMPROVEMENTS:
-- 📡 Switched from Wolverine to MassTransit for better enterprise messaging stability
-- 🧪 Enhanced ApplicationModule with proper CQRS command/query generation
-- 📋 Fixed ReadModelsModule and ExternalServicesModule path generation
-- 🧩 Improved UnitTestModule and IntegrationTestModule file placement
+✅ DEVELOPER EXPERIENCE:
+- 💡 Generated code now includes helpful comments and customization guidance
+- 🔍 Better error messages and validation feedback
+- 📋 Standardized file generation patterns across all template modules
+- 🎨 Enhanced CLI reliability across different deployment scenarios
 
-✅ CODE GENERATION:
-- 🏗️ Fixed parameter generation to use PascalCase properties
-- 📝 Improved validation rules and entity construction logic
-- 🔗 Enhanced project references and dependency management
-- 📊 Better string interpolation handling in generated code
-
-🚀 PRODUCTION READY: Generate fully containerized microservices with clean architecture and proper file organization!
+🚀 PRODUCTION READY: All critical bugs fixed - reliable template generation and Docker builds guaranteed!
     </PackageReleaseNotes>
   </PropertyGroup>
 

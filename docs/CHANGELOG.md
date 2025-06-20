@@ -5,6 +5,36 @@ All notable changes to MicroserviceKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Released] - v0.4.1
+
+### 🐛 Critical Bug Fixes
+
+#### Template Engine & Code Generation
+- **FIXED**: Hardcoded entity constructor in ApplicationModule causing compilation errors
+  - Replaced rigid constructor signature with flexible pattern and developer guidance
+  - Removed incorrect `UpdatedAt = DateTime.UtcNow` during entity creation
+  - Added comments for customizing constructor parameters based on domain requirements
+- **FIXED**: Fragile template path resolution causing "template not found" errors in packaged CLI
+  - Replaced hardcoded relative path with robust multi-strategy discovery
+  - Added environment variable override (`MICROSERVICE_TEMPLATES_PATH`)
+  - Implemented assembly location search, current directory search, and parent directory traversal
+  - Enhanced error handling and fallback mechanisms for different deployment scenarios
+- **FIXED**: Dockerfile path and copy errors causing Docker build failures
+  - Corrected `WORKDIR` path from `/src/src/Api` to `/src/Api`
+  - Implemented conditional COPY statements based on enabled modules and architecture level
+  - Prevented "COPY failed: file not found" errors for non-generated projects
+  - Enhanced Docker build process with proper project dependency resolution
+
+#### Configuration & Architecture
+- **FIXED**: Incorrect configuration property access in DockerModule
+  - Updated to use correct architecture level checking instead of non-existent `Features.Application`
+  - Improved conditional logic for project inclusion based on architecture patterns
+
+#### Developer Experience
+- **ENHANCED**: Generated code now includes helpful comments and guidance
+- **IMPROVED**: Error messages and validation feedback throughout generation process
+- **STANDARDIZED**: File generation patterns across all template modules
+
 ## [Released] - v0.4.0
 
 ### 🚀 Major Bug Fixes & Improvements
