@@ -50,11 +50,11 @@ public class UnitTestModule : ITemplateModule
 
         // Generate test project file
         var csprojContent = GenerateTestProjectFile(config);
-        await context.WriteFileAsync($"{outputPath}/{config.MicroserviceName}.Tests.csproj", csprojContent);
+        await context.WriteFileAsync($"tests/{config.MicroserviceName}.Tests.csproj", csprojContent);
 
         // Generate global usings
         var globalUsingsContent = GenerateGlobalUsings();
-        await context.WriteFileAsync($"{outputPath}/GlobalUsings.cs", globalUsingsContent);
+        await context.WriteFileAsync("tests/GlobalUsings.cs", globalUsingsContent);
     }
 
     private async Task GenerateAggregateTestsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
@@ -78,13 +78,13 @@ public class UnitTestModule : ITemplateModule
     private async Task GenerateDomainEntityTestsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var testContent = GenerateDomainEntityTests(config, aggregate);
-        await context.WriteFileAsync($"{outputPath}/Domain/Entities/{aggregate.Name}Tests.cs", testContent);
+        await context.WriteFileAsync($"tests/Domain/Entities/{aggregate.Name}Tests.cs", testContent);
     }
 
     private async Task GenerateDomainEventTestsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var testContent = GenerateDomainEventTests(config, aggregate);
-        await context.WriteFileAsync($"{outputPath}/Domain/Events/{aggregate.Name}EventTests.cs", testContent);
+        await context.WriteFileAsync($"tests/Domain/Events/{aggregate.Name}EventTests.cs", testContent);
     }
 
     private async Task GenerateCommandTestsAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
@@ -97,7 +97,7 @@ public class UnitTestModule : ITemplateModule
         foreach (var operation in allOperations)
         {
             var testContent = GenerateCommandHandlerTests(config, aggregate, operation);
-            await context.WriteFileAsync($"{outputPath}/Application/Commands/{operation}{aggregate.Name}CommandHandlerTests.cs", testContent);
+            await context.WriteFileAsync($"tests/Application/Commands/{operation}{aggregate.Name}CommandHandlerTests.cs", testContent);
         }
     }
 
@@ -113,29 +113,29 @@ public class UnitTestModule : ITemplateModule
         foreach (var queryName in queries)
         {
             var testContent = GenerateQueryHandlerTests(config, aggregate, queryName);
-            await context.WriteFileAsync($"{outputPath}/Application/Queries/{queryName}QueryHandlerTests.cs", testContent);
+            await context.WriteFileAsync($"tests/Application/Queries/{queryName}QueryHandlerTests.cs", testContent);
         }
     }
 
     private async Task GenerateTestBuildersAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var builderContent = GenerateTestBuilder(config, aggregate);
-        await context.WriteFileAsync($"{outputPath}/Builders/{aggregate.Name}Builder.cs", builderContent);
+        await context.WriteFileAsync($"tests/Builders/{aggregate.Name}Builder.cs", builderContent);
     }
 
     private async Task GenerateTestUtilitiesAsync(string outputPath, TemplateConfiguration config, GenerationContext context)
     {
         // Generate Mock Repository
         var mockRepositoryContent = GenerateMockRepository(config);
-        await context.WriteFileAsync($"{outputPath}/Utilities/MockRepository.cs", mockRepositoryContent);
+        await context.WriteFileAsync("tests/Utilities/MockRepository.cs", mockRepositoryContent);
 
         // Generate Test Data
         var testDataContent = GenerateTestData(config);
-        await context.WriteFileAsync($"{outputPath}/Utilities/TestData.cs", testDataContent);
+        await context.WriteFileAsync("tests/Utilities/TestData.cs", testDataContent);
 
         // Generate Test Extensions
         var testExtensionsContent = GenerateTestExtensions(config);
-        await context.WriteFileAsync($"{outputPath}/Utilities/TestExtensions.cs", testExtensionsContent);
+        await context.WriteFileAsync("tests/Utilities/TestExtensions.cs", testExtensionsContent);
     }
 
     private string GenerateTestProjectFile(TemplateConfiguration config)
