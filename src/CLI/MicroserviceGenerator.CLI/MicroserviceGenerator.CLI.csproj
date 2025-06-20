@@ -8,7 +8,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>microkit</ToolCommandName>
     <PackageId>MicroserviceKit</PackageId>
-    <Version>0.4.3</Version>
+    <Version>0.4.4</Version>
     <Authors>Paweł Pilichowski</Authors>
     <Description>🚀 Complete toolkit for generating production-ready .NET 8 microservices with DDD, CQRS, Clean Architecture, Event-Driven Architecture, and comprehensive infrastructure. Generate enterprise-grade microservices with REST APIs, CQRS, MongoDB read models, RabbitMQ messaging, external service integration, Docker, and complete testing suite.</Description>
     <PackageTags>microservices;toolkit;generator;ddd;cqrs;dotnet;clean-architecture;rest-api;event-driven;mongodb;rabbitmq;docker;enterprise;microkit</PackageTags>
@@ -17,28 +17,7 @@
     <RepositoryUrl>https://github.com/suranig/microservice-net8-ddd</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>
-🎉 Release 0.4.3 - Critical Bug Fixes!
-
-🐛 CRITICAL BUGS FIXED:
-- ✅ Fixed case mismatch in command parameter access (command.id → command.Id)
-- ✅ Replaced incorrect _bus.InvokeAsync() with proper MassTransit CreateRequestClient pattern
-- ✅ Added missing response logic for Update and Delete commands (await context.RespondAsync)
-- ✅ Added MediatR package reference to ApplicationModule for proper compilation
-
-🏗️ COMPILATION IMPROVEMENTS:
-- ✅ Domain layer: 0 errors, 0 warnings
-- ✅ Application layer: 0 errors, 0 warnings  
-- ✅ Infrastructure layer: 0 errors, 0 warnings
-- ✅ All enterprise templates now generate properly compiling code
-
-🚀 PRODUCTION READY: All major compilation issues resolved for enterprise microservices!
-
-Previous 0.4.2 features:
-- ✅ Complete Docker &amp; Makefile support for all enterprise templates
-- ✅ Fixed DockerModule configuration structure
-- ✅ Templates generate 64 files with full containerization
-    </PackageReleaseNotes>
+    <PackageReleaseNotes>🐛 v0.4.4 - Critical Compilation Fix: Fixed duplicate variable declaration in CQRS controllers causing CS0128 compilation errors. All generated controllers now compile successfully without variable naming conflicts.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

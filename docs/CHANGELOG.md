@@ -5,6 +5,27 @@ All notable changes to MicroserviceKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Released] - v0.4.4
+
+### 🐛 Critical Compilation Fix
+
+#### Duplicate Variable Declaration Issue
+- **FIXED**: Duplicate variable declaration in CQRS controller's `Get{Aggregate}s` method
+  - Resolved CS0128 compilation error: "A local variable named 'response' is already defined in this scope"
+  - Renamed PagedResponse variable to `pagedResponse` to avoid naming conflict
+  - MassTransit response variable keeps `response` name for consistency
+  - All generated CQRS controllers now compile successfully without variable naming conflicts
+
+#### Impact
+- **Before**: Generated controllers failed to compile due to duplicate variable names
+- **After**: All enterprise templates generate controllers that compile without errors
+- **Affects**: All CQRS-based templates (cqrs-event-sourcing, read-model, bpc-workflow, event-store)
+
+### 🔧 Technical Details
+- **File**: `src/Modules/Api/RestApiModule.cs`
+- **Method**: `GenerateCQRSController` - pagination endpoint generation
+- **Fix**: Variable naming disambiguation in template generation logic
+
 ## [Released] - v0.4.3
 
 ### 🐛 Critical Bug Fixes
