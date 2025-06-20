@@ -22,12 +22,25 @@
 - **🔐 Security** - JWT authentication, OAuth2, RBAC
 - **🌐 API Gateway** - Centralized routing and authentication
 
+## 🆕 What's New in v0.4.5
+
+- **✅ Complete Template Library** - All 16 microservice templates now included in CLI package
+- **🎯 Enhanced Discovery** - `microkit list` command with filtering and detailed views
+- **📋 Template Details** - `microkit describe` command for comprehensive template information
+- **🚀 Production Ready** - Templates include Docker, Kubernetes, testing, and monitoring
+- **🔧 CLI Improvements** - Better error handling and user experience
+- **📦 NuGet Distribution** - Templates embedded in NuGet package for global availability
+
 ## 🚀 Quick Start
 
 ### Install the CLI tool
 
 ```bash
+# Install latest version (v0.4.5)
 dotnet tool install -g MicroserviceKit
+
+# Or update existing installation
+dotnet tool update -g MicroserviceKit
 ```
 
 ### Generate your first microservice
@@ -46,17 +59,20 @@ microkit generate MyService --template cqrs-event-sourcing --aggregates Article 
 ### Explore available templates
 
 ```bash
-# List all templates
+# List all 16 available templates
 microkit list
 
 # List by category
 microkit list --category service-types
+microkit list --category levels
 
 # Get detailed template information
 microkit describe cqrs-event-sourcing.json
 ```
 
 ## 📋 Available Templates
+
+**16 production-ready templates** across 4 categories:
 
 ### 🏷️ Enterprise Service Types
 Perfect for production microservices with complex business requirements:
@@ -202,23 +218,32 @@ microkit generate MyService --template cqrs-event-sourcing \
 ### 📋 Discovery Commands
 
 ```bash
-# List all templates
+# List all 16 available templates
 microkit list
 
-# List by category
-microkit list --category service-types
-microkit list --category levels
+# List by category (4 categories available)
+microkit list --category service-types  # 10 enterprise templates
+microkit list --category levels         # 3 architecture levels
+microkit list --category examples       # 1 complete example
+microkit list --category configs        # 2 base configurations
 
 # Filter by complexity
-microkit list --complexity enterprise
-microkit list --complexity medium
+microkit list --complexity enterprise   # Advanced templates
+microkit list --complexity medium       # Balanced templates
+microkit list --complexity simple       # Quick start templates
 
-# Detailed view with descriptions
+# Detailed view with features and usage info
 microkit list --detailed
 
-# Get specific template information
-microkit describe cqrs-event-sourcing.json
-microkit describe api-gateway.json --format json
+# Output in different formats
+microkit list --format table           # Default table view
+microkit list --format json            # JSON output
+microkit list --format markdown        # Markdown format
+
+# Get comprehensive template information
+microkit describe cqrs-event-sourcing.json    # Full template details
+microkit describe api-gateway.json --format json  # JSON output
+microkit describe standard-service.json        # Architecture level info
 ```
 
 ## 🔧 Template Customization
