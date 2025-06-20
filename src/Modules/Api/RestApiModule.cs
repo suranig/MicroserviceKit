@@ -524,12 +524,12 @@ namespace {config.Namespace}.Api.Controllers;
 [Tags(""{aggregate.Name} Management"")]
 public class {aggregate.Name}Controller : ControllerBase
 {{
-    private readonly IMessageBus _messageBus;
+    private readonly IBus _bus;
     private readonly ILogger<{aggregate.Name}Controller> _logger;
 
-    public {aggregate.Name}Controller(IMessageBus messageBus, ILogger<{aggregate.Name}Controller> logger)
+    public {aggregate.Name}Controller(IBus bus, ILogger<{aggregate.Name}Controller> logger)
     {{
-        _messageBus = messageBus;
+        _bus = bus;
         _logger = logger;
     }}
 
@@ -549,7 +549,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()}s with page={{Page}}, pageSize={{PageSize}}"", page, pageSize);
         
         var query = new Get{aggregate.Name}sWithPagingQuery(page, pageSize);
-        var result = await _messageBus.InvokeAsync<PagedResponse<{aggregate.Name}Dto>>(query, cancellationToken);
+        var result = await _bus.InvokeAsync<PagedResponse<{aggregate.Name}Dto>>(query, cancellationToken);
         
         var response = new PagedResponse<{aggregate.Name}Response>
         {{
@@ -578,7 +578,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var query = new Get{aggregate.Name}ByIdQuery(id);
-        var result = await _messageBus.InvokeAsync<{aggregate.Name}Dto?>(query, cancellationToken);
+        var result = await _bus.InvokeAsync<{aggregate.Name}Dto?>(query, cancellationToken);
         
         if (result == null)
         {{
@@ -604,7 +604,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Creating new {aggregate.Name.ToLowerInvariant()}"");
         
         var command = MapToCreateCommand(request);
-        var id = await _messageBus.InvokeAsync<Guid>(command, cancellationToken);
+        var id = await _bus.InvokeAsync<Guid>(command, cancellationToken);
         
         _logger.LogInformation(""{aggregate.Name} created with id={{Id}}"", id);
         return CreatedAtAction(nameof(Get{aggregate.Name}ById), new {{ id }}, id);
@@ -628,7 +628,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Updating {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var command = MapToUpdateCommand(id, request);
-        await _messageBus.InvokeAsync(command, cancellationToken);
+        await _bus.InvokeAsync(command, cancellationToken);
         
         _logger.LogInformation(""{aggregate.Name} with id={{Id}} updated successfully"", id);
         return NoContent();
@@ -649,7 +649,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Deleting {aggregate.Name.ToLowerInvariant()} with id={{Id}}"", id);
         
         var command = new Delete{aggregate.Name}Command(id);
-        await _messageBus.InvokeAsync(command, cancellationToken);
+        await _bus.InvokeAsync(command, cancellationToken);
         
         _logger.LogInformation(""{aggregate.Name} with id={{Id}} deleted successfully"", id);
         return NoContent();

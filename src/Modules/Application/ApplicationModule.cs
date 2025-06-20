@@ -588,7 +588,12 @@ public class PagedResult<T>
         
         var constructorParams = string.Join(", ", filteredProperties.Select(p => $"command.{p.Name}"));
         
-        return $@"var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}({constructorParams});
+        // Add Guid.NewGuid() as first parameter for entity id
+        var fullConstructorParams = string.IsNullOrEmpty(constructorParams) 
+            ? "Guid.NewGuid()" 
+            : $"Guid.NewGuid(), {constructorParams}";
+        
+        return $@"var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}({fullConstructorParams});
         await _repository.AddAsync(entity, context.CancellationToken);";
     }
 

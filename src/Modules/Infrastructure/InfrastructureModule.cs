@@ -100,7 +100,8 @@ public class InfrastructureModule : ITemplateModule
             @"<PackageReference Include=""Microsoft.EntityFrameworkCore"" Version=""8.0.10"" />",
             @"<PackageReference Include=""Microsoft.EntityFrameworkCore.Design"" Version=""8.0.10"" />",
             @"<PackageReference Include=""Microsoft.Extensions.Configuration.Abstractions"" Version=""8.0.0"" />",
-            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />"
+            @"<PackageReference Include=""Microsoft.Extensions.DependencyInjection.Abstractions"" Version=""8.0.2"" />",
+            @"<PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore"" Version=""8.0.10"" />"
         };
 
         // Add provider-specific packages
@@ -153,7 +154,7 @@ public class InfrastructureModule : ITemplateModule
             $"modelBuilder.ApplyConfiguration(new {a.Name}Configuration());"));
 
         return $@"using Microsoft.EntityFrameworkCore;
-using {config.Namespace}.Domain.{string.Join($";\nusing {config.Namespace}.Domain.", aggregates.Select(a => a.Name))};
+using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Infrastructure.Persistence.Configurations;
 
 namespace {config.Namespace}.Infrastructure.Persistence;
@@ -198,8 +199,7 @@ public class ApplicationDbContext : DbContext
             {{
                 auditableEntity.CreatedAt = DateTime.UtcNow;
             }}
-            
-            if (entry.State == EntityState.Modified)
+            else if (entry.State == EntityState.Modified)
             {{
                 auditableEntity.UpdatedAt = DateTime.UtcNow;
             }}
@@ -218,7 +218,7 @@ public interface IAuditableEntity
 
     private string GenerateRepositoryInterface(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
-        return $@"using {config.Namespace}.Domain.{aggregate.Name};
+        return $@"using {config.Namespace}.Domain.Entities;
 
 namespace {config.Namespace}.Infrastructure.Repositories;
 
@@ -238,7 +238,7 @@ public interface I{aggregate.Name}Repository
     private string GenerateRepository(TemplateConfiguration config, AggregateConfiguration aggregate)
     {
         return $@"using Microsoft.EntityFrameworkCore;
-using {config.Namespace}.Domain.{aggregate.Name};
+using {config.Namespace}.Domain.Entities;
 using {config.Namespace}.Infrastructure.Persistence;
 
 namespace {config.Namespace}.Infrastructure.Repositories;
@@ -309,7 +309,7 @@ public class {aggregate.Name}Repository : I{aggregate.Name}Repository
 
         return $@"using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using {config.Namespace}.Domain.{aggregate.Name};
+using {config.Namespace}.Domain.Entities;
 
 namespace {config.Namespace}.Infrastructure.Persistence.Configurations;
 
