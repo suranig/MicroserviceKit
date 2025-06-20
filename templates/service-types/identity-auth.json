@@ -1,0 +1,265 @@
+{
+  "microserviceName": "{{microserviceName}}",
+  "namespace": "{{namespace}}",
+  "description": "Identity and Authentication service with OAuth2, JWT, and RBAC",
+  
+  "architecture": {
+    "pattern": "identity-auth",
+    "complexity": "enterprise",
+    "layers": ["Domain", "Application", "Infrastructure", "Api"]
+  },
+  
+  "features": {
+    "oauth2": {
+      "enabled": true,
+      "authorizationCodeFlow": true,
+      "clientCredentialsFlow": true,
+      "refreshTokens": true,
+      "scopes": true
+    },
+    "jwt": {
+      "enabled": true,
+      "accessTokens": true,
+      "refreshTokens": true,
+      "customClaims": true,
+      "tokenValidation": true
+    },
+    "rbac": {
+      "enabled": true,
+      "roles": true,
+      "permissions": true,
+      "policies": true,
+      "hierarchicalRoles": true
+    },
+    "multiAuth": {
+      "enabled": true,
+      "internalUsers": true,
+      "externalApps": true,
+      "apiKeys": true,
+      "socialLogin": false
+    },
+    "identityServer": {
+      "enabled": true,
+      "userManagement": true,
+      "clientManagement": true,
+      "resourceManagement": true
+    }
+  },
+  
+  "domain": {
+    "aggregates": [
+      {
+        "name": "User",
+        "entities": ["User", "UserRole", "UserClaim"],
+        "valueObjects": ["UserId", "Email", "UserStatus"],
+        "domainEvents": [
+          "UserRegistered",
+          "UserActivated",
+          "UserRoleAssigned",
+          "UserPasswordChanged"
+        ]
+      },
+      {
+        "name": "Client",
+        "entities": ["OAuthClient", "ClientSecret", "ClientScope"],
+        "valueObjects": ["ClientId", "ClientType", "GrantType"],
+        "domainEvents": [
+          "ClientRegistered",
+          "ClientSecretGenerated",
+          "ClientScopeUpdated"
+        ]
+      },
+      {
+        "name": "Role",
+        "entities": ["Role", "Permission"],
+        "valueObjects": ["RoleId", "PermissionId", "ResourceAction"],
+        "domainEvents": [
+          "RoleCreated",
+          "PermissionAssigned",
+          "RoleHierarchyChanged"
+        ]
+      }
+    ],
+    "domainServices": [
+      "PasswordHasher",
+      "TokenGenerator",
+      "PermissionEvaluator"
+    ],
+    "specifications": true
+  },
+  
+  "application": {
+    "commands": [
+      {
+        "name": "RegisterUser",
+        "handler": "RegisterUserHandler",
+        "validation": true
+      },
+      {
+        "name": "AuthenticateUser",
+        "handler": "AuthenticateUserHandler",
+        "validation": true
+      },
+      {
+        "name": "RefreshToken",
+        "handler": "RefreshTokenHandler",
+        "validation": true
+      },
+      {
+        "name": "RegisterClient",
+        "handler": "RegisterClientHandler",
+        "validation": true
+      },
+      {
+        "name": "AssignRoleToUser",
+        "handler": "AssignRoleToUserHandler",
+        "validation": true
+      }
+    ],
+    "queries": [
+      {
+        "name": "GetUserById",
+        "handler": "GetUserByIdHandler",
+        "returnType": "UserDto"
+      },
+      {
+        "name": "GetUserPermissions",
+        "handler": "GetUserPermissionsHandler",
+        "returnType": "List<PermissionDto>"
+      },
+      {
+        "name": "ValidateToken",
+        "handler": "ValidateTokenHandler",
+        "returnType": "TokenValidationResult"
+      }
+    ],
+    "eventHandlers": [
+      {
+        "event": "UserRegistered",
+        "handler": "UserRegisteredHandler"
+      },
+      {
+        "event": "ClientRegistered",
+        "handler": "ClientRegisteredHandler"
+      }
+    ]
+  },
+  
+  "infrastructure": {
+    "database": {
+      "provider": "postgresql",
+      "eventStore": false,
+      "readModel": "postgresql",
+      "connectionString": "{{connectionString}}",
+      "tables": ["Users", "Roles", "Permissions", "Clients", "Tokens"]
+    },
+    "messaging": {
+      "provider": "rabbitmq",
+      "eventPublishing": true,
+      "eventSubscription": false,
+      "auditEvents": true
+    },
+    "caching": {
+      "provider": "redis",
+      "enabled": true,
+      "distributedCache": true,
+      "tokenCache": true,
+      "userPermissionCache": true,
+      "ttl": 900
+    },
+    "security": {
+      "passwordHashing": "bcrypt",
+      "tokenSigning": "RS256",
+      "certificateManagement": true,
+      "secretsManagement": true
+    },
+    "externalServices": []
+  },
+  
+  "api": {
+    "type": "rest",
+    "versioning": true,
+    "swagger": true,
+    "authentication": "self-contained",
+    "authorization": "policy-based",
+    "healthChecks": true,
+    "controllers": [
+      {
+        "name": "AuthController",
+        "actions": ["Login", "Register", "RefreshToken", "Logout"]
+      },
+      {
+        "name": "OAuthController",
+        "actions": ["Authorize", "Token", "Introspect", "Revoke"]
+      },
+      {
+        "name": "UserController",
+        "actions": ["GetProfile", "UpdateProfile", "ChangePassword"]
+      },
+      {
+        "name": "AdminController",
+        "actions": ["ManageUsers", "ManageRoles", "ManageClients"],
+        "authorization": "admin-only"
+      }
+    ],
+    "oauth2Endpoints": {
+      "authorization": "/oauth/authorize",
+      "token": "/oauth/token",
+      "introspection": "/oauth/introspect",
+      "revocation": "/oauth/revoke"
+    }
+  },
+  
+  "testing": {
+    "unitTests": true,
+    "integrationTests": true,
+    "testContainers": true,
+    "securityTests": true,
+    "oauth2FlowTests": true
+  },
+  
+  "deployment": {
+    "docker": {
+      "enabled": true,
+      "multiStage": true,
+      "healthCheck": true,
+      "secrets": true
+    },
+    "kubernetes": {
+      "enabled": true,
+      "deployment": true,
+      "service": true,
+      "configMap": true,
+      "secrets": true,
+      "tls": true
+    }
+  },
+  
+  "monitoring": {
+    "healthChecks": true,
+    "metrics": true,
+    "logging": {
+      "structured": true,
+      "correlationId": true,
+      "auditTrail": true,
+      "securityEvents": true
+    },
+    "tracing": true,
+    "securityMetrics": {
+      "authenticationAttempts": true,
+      "tokenGeneration": true,
+      "permissionChecks": true,
+      "failedLogins": true
+    }
+  },
+  
+  "security": {
+    "https": true,
+    "hsts": true,
+    "contentSecurityPolicy": true,
+    "rateLimiting": true,
+    "bruteForceProtection": true,
+    "accountLockout": true,
+    "passwordPolicy": true
+  }
+} 
