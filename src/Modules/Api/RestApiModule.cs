@@ -49,21 +49,21 @@ public class RestApiModule : ITemplateModule
 
         // Generate .csproj file
         var csprojContent = GenerateProjectFile(config);
-        await context.WriteFileAsync($"{outputPath}/{config.MicroserviceName}.Api.csproj", csprojContent);
+        await context.WriteFileAsync($"src/Api/{config.MicroserviceName}.Api.csproj", csprojContent);
 
         // Generate Program.cs
         var programContent = GenerateProgramFile(config);
-        await context.WriteFileAsync($"{outputPath}/Program.cs", programContent);
+        await context.WriteFileAsync($"src/Api/Program.cs", programContent);
 
         // Generate appsettings.json
         var appSettingsContent = GenerateAppSettingsFile(config);
-        await context.WriteFileAsync($"{outputPath}/appsettings.json", appSettingsContent);
+        await context.WriteFileAsync($"src/Api/appsettings.json", appSettingsContent);
     }
 
     private async Task GenerateControllerAsync(string outputPath, TemplateConfiguration config, AggregateConfiguration aggregate, GenerationContext context)
     {
         var controllerContent = GenerateController(config, aggregate);
-        await context.WriteFileAsync($"{outputPath}/Controllers/{aggregate.Name}Controller.cs", controllerContent);
+        await context.WriteFileAsync($"src/Api/Controllers/{aggregate.Name}Controller.cs", controllerContent);
 
         // Generate request/response models
         await GenerateApiModelsAsync(outputPath, config, aggregate, context);
@@ -75,25 +75,25 @@ public class RestApiModule : ITemplateModule
 
         // Generate request models
         var createRequestContent = GenerateCreateRequest(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"Create{aggregate.Name}Request.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/Create{aggregate.Name}Request.cs", 
             createRequestContent);
 
         var updateRequestContent = GenerateUpdateRequest(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"Update{aggregate.Name}Request.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/Update{aggregate.Name}Request.cs", 
             updateRequestContent);
 
         // Generate response models
         var responseContent = GenerateResponse(config, aggregate);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, $"{aggregate.Name}Response.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/{aggregate.Name}Response.cs", 
             responseContent);
 
         // Generate paged response
         var pagedResponseContent = GeneratePagedResponse(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(modelsPath, "PagedResponse.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Models/PagedResponse.cs", 
             pagedResponseContent);
     }
 
@@ -101,26 +101,26 @@ public class RestApiModule : ITemplateModule
     {
         // Generate global exception filter
         var exceptionFilterContent = GenerateGlobalExceptionFilter(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Filters", "GlobalExceptionFilter.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Filters/GlobalExceptionFilter.cs", 
             exceptionFilterContent);
 
         // Generate validation filter
         var validationFilterContent = GenerateValidationFilter(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Filters", "ValidationFilter.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Filters/ValidationFilter.cs", 
             validationFilterContent);
 
         // Generate API extensions
         var apiExtensionsContent = GenerateApiExtensions(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Extensions", "ApiExtensions.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Extensions/ApiExtensions.cs", 
             apiExtensionsContent);
 
         // Generate correlation middleware
         var correlationMiddlewareContent = GenerateCorrelationMiddleware(config);
-        await File.WriteAllTextAsync(
-            Path.Combine(outputPath, "Middleware", "CorrelationMiddleware.cs"), 
+        await context.WriteFileAsync(
+            $"src/Api/Middleware/CorrelationMiddleware.cs", 
             correlationMiddlewareContent);
     }
 
@@ -133,17 +133,17 @@ public class RestApiModule : ITemplateModule
         
         if (decisions.EnableDDD)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Domain\{config.MicroserviceName}.Domain\{config.MicroserviceName}.Domain.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Domain\{config.MicroserviceName}.Domain.csproj"" />");
         }
         
         if (decisions.EnableCQRS && decisions.ArchitectureLevel != ArchitectureLevel.Minimal)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Application\{config.MicroserviceName}.Application\{config.MicroserviceName}.Application.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Application\{config.MicroserviceName}.Application.csproj"" />");
         }
         
         if (decisions.EnableInfrastructure)
         {
-            projectReferences.Add($@"    <ProjectReference Include=""..\..\Infrastructure\{config.MicroserviceName}.Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />");
+            projectReferences.Add($@"    <ProjectReference Include=""..\Infrastructure\{config.MicroserviceName}.Infrastructure.csproj"" />");
         }
 
         var projectReferencesSection = projectReferences.Any() 

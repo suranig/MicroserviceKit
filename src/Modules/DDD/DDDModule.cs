@@ -39,17 +39,10 @@ public class DDDModule : ITemplateModule
     private async Task CreateDomainProjectStructureAsync(GenerationContext context)
     {
         var config = context.Configuration;
-        var domainPath = context.GetDomainProjectPath();
 
-        // Create directories
-        Directory.CreateDirectory(Path.Combine(domainPath, "Entities"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "Events"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "ValueObjects"));
-        Directory.CreateDirectory(Path.Combine(domainPath, "Interfaces"));
-
-        // Generate .csproj file
+        // Generate .csproj file using relative path
         var csprojContent = GenerateDomainProjectFile(config);
-        await context.WriteFileAsync($"{domainPath}/{config.MicroserviceName}.Domain.csproj", csprojContent);
+        await context.WriteFileAsync($"src/Domain/{config.MicroserviceName}.Domain.csproj", csprojContent);
     }
 
     private string GenerateDomainProjectFile(TemplateConfiguration config)
@@ -79,8 +72,7 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateConstructor(aggregate))
             .Replace("{{Methods}}", GenerateMethods(aggregate));
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/Entities/{aggregate.Name}.cs", content);
+        await context.WriteFileAsync($"src/Domain/Entities/{aggregate.Name}.cs", content);
     }
 
     private async Task GenerateAggregateEventsAsync(GenerationContext context, AggregateConfiguration aggregate)
@@ -92,8 +84,7 @@ public class DDDModule : ITemplateModule
             .Replace("{{EventName}}", $"{aggregate.Name}CreatedEvent")
             .Replace("{{Parameters}}", $"Guid aggregateId");
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
+        await context.WriteFileAsync($"src/Domain/Events/{aggregate.Name}CreatedEvent.cs", createdEventContent);
     }
 
     private async Task GenerateValueObjectAsync(GenerationContext context, ValueObjectConfiguration valueObject)
@@ -106,8 +97,7 @@ public class DDDModule : ITemplateModule
             .Replace("{{Constructor}}", GenerateValueObjectConstructor(valueObject))
             .Replace("{{EqualityComponents}}", GenerateEqualityComponents(valueObject.Properties));
 
-        var domainPath = context.GetDomainProjectPath();
-        await context.WriteFileAsync($"{domainPath}/ValueObjects/{valueObject.Name}.cs", content);
+        await context.WriteFileAsync($"src/Domain/ValueObjects/{valueObject.Name}.cs", content);
     }
 
     private string GenerateProperties(List<PropertyConfiguration> properties)
