@@ -166,15 +166,17 @@ public class RestApiModule : ITemplateModule
   <ItemGroup>
     <PackageReference Include=""Microsoft.AspNetCore.OpenApi"" Version=""8.0.0"" />
     <PackageReference Include=""Swashbuckle.AspNetCore"" Version=""6.6.2"" />
-    <PackageReference Include=""WolverineFx"" Version=""3.5.0"" />
+
     <PackageReference Include=""FluentValidation.AspNetCore"" Version=""11.3.0"" />
     <PackageReference Include=""Serilog.AspNetCore"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Authentication.JwtBearer"" Version=""8.0.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.ResponseCompression"" Version=""2.2.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning"" Version=""5.1.0"" />
     <PackageReference Include=""Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer"" Version=""5.1.0"" />
-    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks"" Version=""8.0.0"" />
+    <PackageReference Include=""Microsoft.Extensions.Diagnostics.HealthChecks"" Version=""8.0.10"" />
     <PackageReference Include=""AspNetCore.HealthChecks.UI.Client"" Version=""8.0.1"" />
+    <PackageReference Include=""MassTransit"" Version=""8.2.0"" />
+    <PackageReference Include=""MassTransit.RabbitMQ"" Version=""8.2.0"" />
   </ItemGroup>{projectReferencesSection}
 
 </Project>";
@@ -193,7 +195,7 @@ public class RestApiModule : ITemplateModule
             $"using {config.Namespace}.Api.Extensions;",
             $"using {config.Namespace}.Api.Filters;",
             $"using {config.Namespace}.Api.Middleware;",
-            "using Wolverine;",
+            "using MassTransit;",
             "using Serilog;"
         };
 
@@ -251,8 +253,19 @@ builder.Services.AddApiExtensions(builder.Configuration);
 
 {authConfig}
 
-// Add Wolverine
-builder.Host.UseWolverine();
+// Add MassTransit
+builder.Services.AddMassTransit(x =>
+{{
+    x.UsingRabbitMq((context, cfg) =>
+    {{
+        cfg.Host(""localhost"", ""/vhost"", h =>
+        {{
+            h.Username(""guest"");
+            h.Password(""guest"");
+        }});
+        cfg.ConfigureEndpoints(context);
+    }});
+}});
 
 var app = builder.Build();
 
@@ -496,7 +509,7 @@ public class {aggregate.Name}Controller : ControllerBase
             $"using {config.Namespace}.Application.{aggregate.Name}.Queries.Get{aggregate.Name}sWithPaging;",
             $"using {config.Namespace}.Application.{aggregate.Name}.DTOs;",
             $"using {config.Namespace}.Api.Models;",
-            "using Wolverine;"
+            "using MassTransit;"
         };
 
         var usings = string.Join("\n", usingStatements);
@@ -536,7 +549,7 @@ public class {aggregate.Name}Controller : ControllerBase
         _logger.LogInformation(""Getting {aggregate.Name.ToLowerInvariant()}s with page={{Page}}, pageSize={{PageSize}}"", page, pageSize);
         
         var query = new Get{aggregate.Name}sWithPagingQuery(page, pageSize);
-        var result = await _messageBus.InvokeAsync<PagedResult<{aggregate.Name}Dto>>(query, cancellationToken);
+        var result = await _messageBus.InvokeAsync<PagedResponse<{aggregate.Name}Dto>>(query, cancellationToken);
         
         var response = new PagedResponse<{aggregate.Name}Response>
         {{
@@ -656,7 +669,6 @@ public class {aggregate.Name}Controller : ControllerBase
     private static Create{aggregate.Name}Command MapToCreateCommand(Create{aggregate.Name}Request request)
     {{
         return new Create{aggregate.Name}Command(
-            request.Id,
             request.Name,
             request.Description);
     }}
@@ -665,7 +677,6 @@ public class {aggregate.Name}Controller : ControllerBase
     {{
         return new Update{aggregate.Name}Command(
             id,
-            request.Id,
             request.Name,
             request.Description);
     }}
@@ -915,13 +926,8 @@ public class ValidationFilter : IActionFilter
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
                 new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
-                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version""),
-                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
+                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version"")
             );
-        }}).AddVersionedApiExplorer(setup =>
-        {{
-            setup.GroupNameFormat = ""'v'VVV"";
-            setup.SubstituteApiVersionInUrl = true;
         }});"
             : "        // API Versioning not included for minimal architecture";
 
