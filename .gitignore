@@ -20,4 +20,5 @@ nupkg/
 test_cli/
 **/test_cli/
 
-.cursor/playground/
+.cursor/
+playground/
