@@ -894,6 +894,37 @@ public class ValidationFilter : IActionFilter
 
     private string GenerateApiExtensions(TemplateConfiguration config)
     {
+        var decisions = ArchitectureRules.MakeDecisions(config);
+        
+        // Generate health checks section based on enabled modules
+        var healthChecks = decisions.EnableInfrastructure 
+            ? $@"        // Add Health Checks
+        services.AddHealthChecks()
+            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+            .AddDbContextCheck<{config.Namespace}.Infrastructure.Persistence.ApplicationDbContext>();"
+            : $@"        // Add Health Checks
+        services.AddHealthChecks()
+            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());";
+
+        // Generate API versioning section based on architecture level
+        var apiVersioning = decisions.ArchitectureLevel != ArchitectureLevel.Minimal
+            ? $@"        // Add API Versioning
+        services.AddApiVersioning(options =>
+        {{
+            options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
+                new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
+                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version""),
+                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
+            );
+        }}).AddVersionedApiExplorer(setup =>
+        {{
+            setup.GroupNameFormat = ""'v'VVV"";
+            setup.SubstituteApiVersionInUrl = true;
+        }});"
+            : "        // API Versioning not included for minimal architecture";
+
         return $@"using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
@@ -954,10 +985,7 @@ public static class ApiExtensions
         // Add Memory Cache
         services.AddMemoryCache();
 
-        // Add Health Checks
-        services.AddHealthChecks()
-            .AddCheck(""self"", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
-            .AddDbContextCheck<{config.Namespace}.Infrastructure.Persistence.ApplicationDbContext>();
+{healthChecks}
 
         // Configure Swagger
         services.AddSwaggerGen(c =>
@@ -1008,21 +1036,7 @@ public static class ApiExtensions
             }}
         }});
 
-        // Add API Versioning
-        services.AddApiVersioning(options =>
-        {{
-            options.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
-            options.AssumeDefaultVersionWhenUnspecified = true;
-            options.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersionReader.Combine(
-                new Microsoft.AspNetCore.Mvc.QueryStringApiVersionReader(""version""),
-                new Microsoft.AspNetCore.Mvc.HeaderApiVersionReader(""X-Version""),
-                new Microsoft.AspNetCore.Mvc.UrlSegmentApiVersionReader()
-            );
-        }}).AddVersionedApiExplorer(setup =>
-        {{
-            setup.GroupNameFormat = ""'v'VVV"";
-            setup.SubstituteApiVersionInUrl = true;
-        }});
+{apiVersioning}
 
         return services;
     }}
