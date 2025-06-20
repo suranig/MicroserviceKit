@@ -54,6 +54,172 @@
       ]
     },
     
+    "service-types": {
+      "description": "Architectural pattern templates for different microservice types",
+      "path": "service-types/",
+      "templates": [
+        {
+          "name": "cqrs-event-sourcing.json",
+          "title": "CQRS + Event Sourcing",
+          "description": "Command Query Responsibility Segregation with Event Sourcing pattern for complex business logic",
+          "complexity": "enterprise",
+          "features": ["cqrs", "event-sourcing", "domain-events", "aggregate-root", "postgresql"],
+          "projectCount": 4,
+          "estimatedTime": "25 minutes",
+          "whenToUse": [
+            "Services with complex business rules",
+            "Audit trail requirements", 
+            "Event-driven architecture",
+            "Write-heavy workloads"
+          ],
+          "examples": ["ArticleService", "PageService", "MediaService"]
+        },
+        {
+          "name": "cqrs-simple.json",
+          "title": "CQRS (Simple)",
+          "description": "Command Query Responsibility Segregation without Event Sourcing",
+          "complexity": "medium",
+          "features": ["cqrs", "clean-architecture", "postgresql", "redis-cache"],
+          "projectCount": 3,
+          "estimatedTime": "15 minutes",
+          "whenToUse": [
+            "Clear separation of read/write operations",
+            "Moderate business complexity",
+            "Performance optimization needs"
+          ],
+          "examples": ["TagTaxonomyService", "CategoryTaxonomyService"]
+        },
+        {
+          "name": "read-model.json",
+          "title": "Read Model Service",
+          "description": "CQRS read side with projections and optimized queries",
+          "complexity": "medium",
+          "features": ["cqrs-read", "mongodb", "projections", "redis-cache", "event-handlers"],
+          "projectCount": 3,
+          "estimatedTime": "15 minutes",
+          "whenToUse": [
+            "Read-optimized data access",
+            "Event projections",
+            "High-performance queries",
+            "Denormalized data views"
+          ],
+          "examples": ["ContentReadService", "ReportingService"]
+        },
+        {
+          "name": "bpc-workflow.json",
+          "title": "Business Process Control",
+          "description": "Workflow engine with Saga pattern for orchestrating business processes",
+          "complexity": "enterprise",
+          "features": ["workflow-engine", "saga-pattern", "external-integrations", "state-machine", "hangfire"],
+          "projectCount": 4,
+          "estimatedTime": "30 minutes",
+          "whenToUse": [
+            "Complex business workflows",
+            "External service orchestration",
+            "Long-running processes",
+            "Distributed transactions"
+          ],
+          "examples": ["BpcService", "OrderProcessingService", "PublishingWorkflowService"]
+        },
+        {
+          "name": "search-indexing.json",
+          "title": "Search & Indexing Service",
+          "description": "Search service with indexing capabilities and full-text search",
+          "complexity": "medium",
+          "features": ["elasticsearch", "search-indexing", "event-driven", "full-text-search"],
+          "projectCount": 3,
+          "estimatedTime": "15 minutes",
+          "whenToUse": [
+            "Full-text search requirements",
+            "Content indexing",
+            "Advanced search features",
+            "Search analytics"
+          ],
+          "examples": ["SearchService", "ContentDiscoveryService"]
+        },
+        {
+          "name": "identity-auth.json",
+          "title": "Identity & Authentication",
+          "description": "Authentication and authorization service with OAuth2 and JWT",
+          "complexity": "enterprise",
+          "features": ["oauth2", "jwt", "rbac", "multi-auth", "identity-server"],
+          "projectCount": 4,
+          "estimatedTime": "25 minutes",
+          "whenToUse": [
+            "User authentication needs",
+            "OAuth2 for external apps",
+            "Role-based access control",
+            "Multi-tenant security"
+          ],
+          "examples": ["IdentityService", "AuthService", "UserManagementService"]
+        },
+        {
+          "name": "api-gateway.json",
+          "title": "API Gateway Pattern",
+          "description": "Gateway service with routing, authentication, and cross-cutting concerns",
+          "complexity": "enterprise",
+          "features": ["api-gateway", "routing", "rate-limiting", "circuit-breaker", "ocelot"],
+          "projectCount": 2,
+          "estimatedTime": "20 minutes",
+          "whenToUse": [
+            "Microservices entry point",
+            "Cross-cutting concerns",
+            "Request routing and aggregation",
+            "API composition"
+          ],
+          "examples": ["ApiGateway", "BffService"]
+        },
+        {
+          "name": "event-store.json",
+          "title": "Event Store Pattern",
+          "description": "Dedicated event storage with replay and projection capabilities",
+          "complexity": "enterprise",
+          "features": ["event-store", "event-sourcing", "projections", "event-replay"],
+          "projectCount": 3,
+          "estimatedTime": "20 minutes",
+          "whenToUse": [
+            "Event sourcing architecture",
+            "Event storage and replay",
+            "Audit trails and history",
+            "Time-travel debugging"
+          ],
+          "examples": ["EventStore", "AuditService"]
+        },
+        {
+          "name": "multi-tenant.json",
+          "title": "Multi-Tenant Service",
+          "description": "Multi-tenancy pattern with tenant isolation and configuration",
+          "complexity": "enterprise",
+          "features": ["multi-tenancy", "tenant-isolation", "configuration-per-tenant", "domain-routing"],
+          "projectCount": 4,
+          "estimatedTime": "20 minutes",
+          "whenToUse": [
+            "Multi-tenant applications",
+            "Tenant-specific configuration",
+            "Data isolation requirements",
+            "SaaS applications"
+          ],
+          "examples": ["TenantService", "ConfigurationService"]
+        },
+        {
+          "name": "legacy-adapter.json",
+          "title": "Legacy Integration Adapter",
+          "description": "Adapter pattern for integrating with legacy systems",
+          "complexity": "medium",
+          "features": ["adapter-pattern", "legacy-integration", "data-sync", "anti-corruption-layer"],
+          "projectCount": 3,
+          "estimatedTime": "15 minutes",
+          "whenToUse": [
+            "Legacy system integration",
+            "Gradual system migration",
+            "Data synchronization",
+            "Anti-corruption layer"
+          ],
+          "examples": ["LegacySyncService", "DataMigrationService"]
+        }
+      ]
+    },
+    
     "configs": {
       "description": "Base configuration templates",
       "path": "configs/",
