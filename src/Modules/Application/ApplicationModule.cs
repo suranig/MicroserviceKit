@@ -576,7 +576,16 @@ public class PagedResult<T>
         
         var constructorParams = string.Join(", ", filteredProperties.Select(p => $"command.{p.Name}"));
         
-        return $@"var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}(Guid.NewGuid(), {constructorParams}, DateTime.UtcNow, DateTime.UtcNow);
+        // Generate flexible entity creation that doesn't assume specific constructor signature
+        return $@"// Create entity - adjust constructor parameters based on your domain entity
+        var entity = new {config.Namespace}.Domain.Entities.{aggregate.Name}(
+            Guid.NewGuid()
+            {(filteredProperties.Any() ? ", " + constructorParams : "")}
+        );
+        
+        // Set audit fields if they exist
+        // entity.CreatedAt = DateTime.UtcNow;
+        
         await _repository.AddAsync(entity, context.CancellationToken);";
     }
 

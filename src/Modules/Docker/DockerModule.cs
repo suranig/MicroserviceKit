@@ -62,6 +62,31 @@ namespace Microservice.Modules.Docker
         private string GenerateDockerfileContent(GenerationContext context)
         {
             var config = context.Configuration;
+            
+            // Build conditional COPY statements based on enabled modules
+            var copyStatements = new List<string>();
+            var restoreProjects = new List<string>();
+            
+            // API project is always included
+            copyStatements.Add($@"COPY [""src/Api/{config.MicroserviceName}.Api.csproj"", ""src/Api/""]");
+            restoreProjects.Add($@"""src/Api/{config.MicroserviceName}.Api.csproj""");
+            
+            // Add other projects based on configuration
+            // Application layer is always included for standard and enterprise levels
+            if (config.Architecture?.Level != "minimal")
+            {
+                copyStatements.Add($@"COPY [""src/Application/{config.MicroserviceName}.Application.csproj"", ""src/Application/""]");
+            }
+            
+            if (config.Architecture?.Level != "minimal")
+            {
+                copyStatements.Add($@"COPY [""src/Domain/{config.MicroserviceName}.Domain.csproj"", ""src/Domain/""]");
+                copyStatements.Add($@"COPY [""src/Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""src/Infrastructure/""]");
+            }
+            
+            var copySection = string.Join("\n", copyStatements);
+            var restoreCommand = string.Join(" ", restoreProjects);
+            
             return $@"FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
@@ -69,16 +94,22 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY [""src/Api/{config.MicroserviceName}.Api.csproj"", ""src/Api/""]
-COPY [""src/Application/{config.MicroserviceName}.Application.csproj"", ""src/Application/""]
-COPY [""src/Domain/{config.MicroserviceName}.Domain.csproj"", ""src/Domain/""]
-COPY [""src/Infrastructure/{config.MicroserviceName}.Infrastructure.csproj"", ""src/Infrastructure/""]
-RUN dotnet restore ""src/Api/{config.MicroserviceName}.Api.csproj""
+
+# Copy project files for dependency resolution
+{copySection}
+
+# Restore dependencies
+RUN dotnet restore {restoreCommand}
+
+# Copy source code
 COPY . .
-WORKDIR ""/src/src/Api""
+
+# Build the application
+WORKDIR ""/src/Api""
 RUN dotnet build ""{config.MicroserviceName}.Api.csproj"" -c Release -o /app/build
 
 FROM build AS publish
+WORKDIR ""/src/Api""
 RUN dotnet publish ""{config.MicroserviceName}.Api.csproj"" -c Release -o /app/publish
 
 FROM base AS final

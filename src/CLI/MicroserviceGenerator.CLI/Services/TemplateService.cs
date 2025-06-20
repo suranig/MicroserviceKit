@@ -10,15 +10,102 @@ public class TemplateService
     
     public TemplateService()
     {
-        // Get the directory where the CLI assembly is located
-        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+        _templatesPath = FindTemplatesDirectory();
+    }
+    
+    private static string FindTemplatesDirectory()
+    {
+        // Try multiple strategies to find the templates directory
+        var strategies = new Func<string?>[]
+        {
+            // Strategy 1: Environment variable override
+            () => Environment.GetEnvironmentVariable("MICROSERVICE_TEMPLATES_PATH"),
+            
+            // Strategy 2: Look for templates directory starting from assembly location
+            () => FindTemplatesFromAssembly(),
+            
+            // Strategy 3: Look in current working directory
+            () => {
+                var currentDir = Directory.GetCurrentDirectory();
+                var templatesPath = Path.Combine(currentDir, "templates");
+                return Directory.Exists(templatesPath) ? templatesPath : null;
+            },
+            
+            // Strategy 4: Look in parent directories (up to 6 levels)
+            () => FindTemplatesInParentDirectories(),
+            
+            // Strategy 5: Default fallback path
+            () => Path.Combine(AppContext.BaseDirectory, "templates")
+        };
         
-        // Navigate to the templates directory from the CLI assembly location
-        // CLI is in: src/CLI/MicroserviceGenerator.CLI/bin/Debug/net8.0/
-        // Templates are in: templates/
-        _templatesPath = Path.Combine(assemblyDirectory!, "..", "..", "..", "..", "..", "..", "templates");
-        _templatesPath = Path.GetFullPath(_templatesPath);
+        foreach (var strategy in strategies)
+        {
+            var path = strategy();
+            if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+            {
+                return Path.GetFullPath(path);
+            }
+        }
+        
+        // If nothing found, return a default path (will be created if needed)
+        return Path.Combine(AppContext.BaseDirectory, "templates");
+    }
+    
+    private static string? FindTemplatesFromAssembly()
+    {
+        try
+        {
+            var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var assemblyDirectory = Path.GetDirectoryName(assemblyLocation);
+            
+            if (string.IsNullOrEmpty(assemblyDirectory))
+                return null;
+            
+            // Look for templates directory by walking up the directory tree
+            var currentDir = new DirectoryInfo(assemblyDirectory);
+            while (currentDir != null && currentDir.Parent != null)
+            {
+                var templatesPath = Path.Combine(currentDir.FullName, "templates");
+                if (Directory.Exists(templatesPath))
+                {
+                    return templatesPath;
+                }
+                currentDir = currentDir.Parent;
+            }
+            
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
+    private static string? FindTemplatesInParentDirectories()
+    {
+        try
+        {
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            var maxLevels = 6;
+            var level = 0;
+            
+            while (currentDir != null && level < maxLevels)
+            {
+                var templatesPath = Path.Combine(currentDir.FullName, "templates");
+                if (Directory.Exists(templatesPath))
+                {
+                    return templatesPath;
+                }
+                currentDir = currentDir.Parent;
+                level++;
+            }
+            
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
     
     public async Task<List<TemplateInfo>> LoadTemplatesAsync()
