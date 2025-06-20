@@ -6,6 +6,7 @@ using System.IO;
 using Microsoft.Extensions.Logging;
 using Microservice.Core.TemplateEngine.Configuration;
 using Microservice.Core.TemplateEngine.Abstractions;
+using System.Linq;
 
 namespace Microservice.Core.TemplateEngine
 {
@@ -64,16 +65,35 @@ namespace Microservice.Core.TemplateEngine
             sb.AppendLine("VisualStudioVersion = 17.0.31903.59");
             sb.AppendLine("MinimumVisualStudioVersion = 10.0.40219.1");
 
-            // Add projects with consistent GUIDs
+            // Get enabled modules and their corresponding projects
+            var enabledModules = _modules.Where(m => m.IsEnabled(_configuration)).ToList();
             var sourceDir = _configuration.ProjectStructure?.SourceDirectory ?? "src";
-            var projects = new[]
+            var projects = new List<(string Name, string Path, string Guid)>();
+
+            // Map modules to their project files
+            foreach (var module in enabledModules)
             {
-                new { Name = "Domain", Path = Path.Combine(sourceDir, "Domain", $"{_configuration.MicroserviceName}.Domain.csproj"), Guid = Guid.NewGuid().ToString("B").ToUpper() },
-                new { Name = "Application", Path = Path.Combine(sourceDir, "Application", $"{_configuration.MicroserviceName}.Application.csproj"), Guid = Guid.NewGuid().ToString("B").ToUpper() },
-                new { Name = "Infrastructure", Path = Path.Combine(sourceDir, "Infrastructure", $"{_configuration.MicroserviceName}.Infrastructure.csproj"), Guid = Guid.NewGuid().ToString("B").ToUpper() },
-                new { Name = "Api", Path = Path.Combine(sourceDir, "Api", $"{_configuration.MicroserviceName}.Api.csproj"), Guid = Guid.NewGuid().ToString("B").ToUpper() },
-                new { Name = "Tests", Path = Path.Combine("tests", $"{_configuration.MicroserviceName}.Tests.csproj"), Guid = Guid.NewGuid().ToString("B").ToUpper() }
-            };
+                switch (module.Name.ToLowerInvariant())
+                {
+                    case "ddd":
+                        projects.Add(("Domain", Path.Combine(sourceDir, "Domain", $"{_configuration.MicroserviceName}.Domain.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "application":
+                        projects.Add(("Application", Path.Combine(sourceDir, "Application", $"{_configuration.MicroserviceName}.Application.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "infrastructure":
+                        projects.Add(("Infrastructure", Path.Combine(sourceDir, "Infrastructure", $"{_configuration.MicroserviceName}.Infrastructure.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "restapi":
+                    case "api":
+                        projects.Add(("Api", Path.Combine(sourceDir, "Api", $"{_configuration.MicroserviceName}.Api.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                    case "unittests":
+                    case "tests":
+                        projects.Add(("Tests", Path.Combine("tests", $"{_configuration.MicroserviceName}.Tests.csproj"), Guid.NewGuid().ToString("B").ToUpper()));
+                        break;
+                }
+            }
 
             foreach (var project in projects)
             {
